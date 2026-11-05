@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>すうじ つみき（たしざん あそび）</title>
+  <!-- Google Fonts: M PLUS Rounded 1c (700 / 800) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app-wrapper">
+    <!-- 1段目：上部「もんだい黒板」エリア -->
+    <header class="blackboard-container">
+      <div class="blackboard-top-row">
+        <button id="btn-back-title" class="bb-ctrl-btn" type="button">
+          もどる
+        </button>
+        <div id="question-progress" class="question-progress">
+          だい 1 もん / 5 もん
+        </div>
+        <button id="btn-sound" class="bb-ctrl-btn" type="button" aria-pressed="true">
+          おと あり
+        </button>
+      </div>
+
+      <!-- 穴埋め式の特大計算問題 -->
+      <div class="equation-row" aria-live="polite">
+        <span id="eq-first" class="eq-num">4</span>
+        <span class="eq-op">＋</span>
+        <span id="eq-blank" class="eq-blank">？</span>
+        <span class="eq-op">＝</span>
+        <span id="eq-target" class="eq-num">10</span>
+      </div>
+
+      <!-- 黒板メッセージ・ヒント欄 -->
+      <div id="blackboard-message" class="blackboard-message">
+        したの すうじを おして 10を つくろう！
+      </div>
+    </header>
+
+    <!-- 2段目：中央「物理ステージ（Matter.js）」エリア -->
+    <main class="stage-container" id="stage-container">
+      <canvas id="game-canvas"></canvas>
+    </main>
+
+    <!-- 3段目：下部「えらんでポン！数字ボタン（4択）」エリア -->
+    <footer class="choices-container">
+      <div class="choices-label" id="choices-label">
+        どの すうじを いれる？ えらんで おしてね！
+      </div>
+      <div class="choices-grid" id="choices-grid" role="group" aria-label="すうじを えらぶ">
+        <button class="choice-btn" type="button" data-index="0">4</button>
+        <button class="choice-btn" type="button" data-index="1">5</button>
+        <button class="choice-btn" type="button" data-index="2">6</button>
+        <button class="choice-btn" type="button" data-index="3">7</button>
+      </div>
+    </footer>
+
+    <!-- タイトル・コース選択オーバーレイ画面 -->
+    <section id="title-overlay" class="overlay-screen">
+      <div class="overlay-card">
+        <div class="title-blackboard">
+          <p class="title-sub">たのしい さんすう つみき</p>
+          <h1 class="title-main">すうじ つみき</h1>
+          <p class="title-desc">すうじを おして つみきを がったい させよう！</p>
+        </div>
+
+        <p class="course-select-heading">あそぶ もんだいを えらんでね</p>
+
+        <div class="course-list">
+          <button class="course-btn course-btn-1" type="button" data-course="make10">
+            <span class="course-name">10を つくろう</span>
+            <span class="course-example">4 ＋ [ ？ ] ＝ 10</span>
+          </button>
+
+          <button class="course-btn course-btn-2" type="button" data-course="add10">
+            <span class="course-name">たしざん（10まで）</span>
+            <span class="course-example">3 ＋ [ ？ ] ＝ 8</span>
+          </button>
+
+          <button class="course-btn course-btn-3" type="button" data-course="carry">
+            <span class="course-name">くりあがりの たしざん</span>
+            <span class="course-example">7 ＋ [ ？ ] ＝ 13</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5問クリア（100てん まんてん！）オーバーレイ画面 -->
+    <section id="result-overlay" class="overlay-screen is-hidden" aria-hidden="true">
+      <div class="overlay-card result-card">
+        <div class="result-header">
+          <!-- SVGで描く大きな赤い「はなまる」 -->
+          <div class="hanamaru-svg-wrap" aria-hidden="true">
+            <svg viewBox="0 0 160 160" class="hanamaru-svg">
+              <!-- 外側の花びら（10枚） -->
+              <path
+                d="M 80 12
+                   Q 96 4, 104 20
+                   Q 122 14, 124 32
+                   Q 142 32, 138 50
+                   Q 154 58, 144 74
+                   Q 156 90, 140 102
+                   Q 146 120, 128 124
+                   Q 126 142, 108 138
+                   Q 98 154, 80 144
+                   Q 62 154, 52 138
+                   Q 34 142, 32 124
+                   Q 14 120, 20 102
+                   Q 4 90, 16 74
+                   Q 6 58, 22 50
+                   Q 18 32, 36 32
+                   Q 38 14, 56 20
+                   Q 64 4, 80 12 Z"
+                fill="#fff5f5"
+                stroke="#e63946"
+                stroke-width="6"
+                stroke-linejoin="round"
+              />
+              <!-- 内側の二重丸と渦巻き -->
+              <circle cx="80" cy="80" r="46" fill="none" stroke="#e63946" stroke-width="6" />
+              <path
+                d="M 54 78
+                   A 26 26 0 1 1 80 106
+                   A 16 16 0 1 1 96 80
+                   A 8 8 0 1 1 80 72"
+                fill="none"
+                stroke="#e63946"
+                stroke-width="6"
+                stroke-linecap="round"
+              />
+              <text x="80" y="88" text-anchor="middle" fill="#e63946" font-size="24" font-weight="800">
+                100てん
+              </text>
+            </svg>
+          </div>
+
+          <div class="result-title-box">
+            <h2 class="result-title">100てん まんてん！</h2>
+            <p class="result-subtitle">5もん ぜんぶ せいかい できたね！</p>
+          </div>
+        </div>
+
+        <div class="review-box">
+          <div class="review-heading">といた 5もんの ふりかえり</div>
+          <ul id="review-list" class="review-list"></ul>
+        </div>
+
+        <div class="result-actions">
+          <button id="btn-replay-same" class="action-btn action-btn-primary" type="button">
+            もういちど あそぶ
+          </button>
+          <button id="btn-replay-select" class="action-btn action-btn-secondary" type="button">
+            ほかに ちょうせん する
+          </button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- 2D物理エンジン Matter.js (CDN) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+  <script src="se.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
