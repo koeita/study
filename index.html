@@ -59,7 +59,7 @@
       </div>
     </footer>
 
-    <!-- タイトル・コース選択オーバーレイ画面（6コース対応） -->
+    <!-- タイトル・コース選択オーバーレイ画面（4大コース：たしざん・ひきざん・かけざん・わりざん） -->
     <section id="title-overlay" class="overlay-screen">
       <div class="overlay-card">
         <div class="title-blackboard">
@@ -71,34 +71,26 @@
         <p class="course-select-heading">あそぶ もんだいを えらんでね</p>
 
         <div class="course-grid">
-          <!-- たし算系 -->
-          <button class="course-btn course-btn-1" type="button" data-course="make10">
-            <span class="course-name">10を つくろう</span>
+          <!-- 1. たしざん（10づくり・10まで・くりあがりを統合） -->
+          <button class="course-btn course-btn-add" type="button" data-course="add">
+            <span class="course-name">たしざん</span>
             <span class="course-example">4 ＋ [ ？ ] ＝ 10</span>
           </button>
 
-          <button class="course-btn course-btn-2" type="button" data-course="add10">
-            <span class="course-name">たしざん</span>
-            <span class="course-example">3 ＋ [ ？ ] ＝ 8</span>
-          </button>
-
-          <button class="course-btn course-btn-3" type="button" data-course="carry">
-            <span class="course-name">くりあがり</span>
-            <span class="course-example">7 ＋ [ ？ ] ＝ 13</span>
-          </button>
-
-          <!-- 引き算・掛け算・割り算系 -->
-          <button class="course-btn course-btn-4" type="button" data-course="sub">
+          <!-- 2. ひきざん -->
+          <button class="course-btn course-btn-sub" type="button" data-course="sub">
             <span class="course-name">ひきざん</span>
             <span class="course-example">8 － [ ？ ] ＝ 5</span>
           </button>
 
-          <button class="course-btn course-btn-5" type="button" data-course="mul">
+          <!-- 3. かけざん -->
+          <button class="course-btn course-btn-mul" type="button" data-course="mul">
             <span class="course-name">かけざん</span>
             <span class="course-example">3 × [ ？ ] ＝ 12</span>
           </button>
 
-          <button class="course-btn course-btn-6" type="button" data-course="div">
+          <!-- 4. わりざん -->
+          <button class="course-btn course-btn-div" type="button" data-course="div">
             <span class="course-name">わりざん</span>
             <span class="course-example">8 ÷ [ ？ ] ＝ 4</span>
           </button>
