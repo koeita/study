@@ -1,4 +1,4 @@
-// すうじ つみき（やりこみ要素：つみき図鑑・メダル実績・つみき広場対応） メインスクリプト
+// すうじ つみき（ステージ制 ＆ A:限定つみき20種・B:3つ星評価・C:きせかえ5種 対応）
 (() => {
   const { Engine, World, Bodies, Body, Events } = Matter;
 
@@ -27,37 +27,46 @@
   const titleOverlay = document.getElementById('title-overlay');
   const resultOverlay = document.getElementById('result-overlay');
   const zukanOverlay = document.getElementById('zukan-overlay');
-  const zukanGridEl = document.getElementById('zukan-grid');
-  const zukanTotalCollectedEl = document.getElementById('zukan-total-collected');
+  const skinOverlay = document.getElementById('skin-overlay');
+
+  const titleStarSvgEl = document.getElementById('title-star-svg');
+  const totalStarsCountEl = document.getElementById('total-stars-count');
   const zukanBadgeCountEl = document.getElementById('zukan-badge-count');
+  const skinBadgeCountEl = document.getElementById('skin-badge-count');
+
   const btnOpenZukan = document.getElementById('btn-open-zukan');
   const btnCloseZukan = document.getElementById('btn-close-zukan');
+  const btnOpenSkin = document.getElementById('btn-open-skin');
+  const btnCloseSkin = document.getElementById('btn-close-skin');
   const btnOpenSandbox = document.getElementById('btn-open-sandbox');
 
+  const courseTabs = Array.from(document.querySelectorAll('.course-tab'));
+  const countTabs = Array.from(document.querySelectorAll('.count-tab'));
+  const stageListContainerEl = document.getElementById('stage-list-container');
+
+  const zukanGridEl = document.getElementById('zukan-grid');
+  const zukanTotalCollectedEl = document.getElementById('zukan-total-collected');
+  const skinListEl = document.getElementById('skin-list');
+
   const rewardBannerEl = document.getElementById('reward-banner');
+  const rewardBannerBadgeEl = document.getElementById('reward-banner-badge');
   const rewardIconBoxEl = document.getElementById('reward-icon-box');
   const rewardNameEl = document.getElementById('reward-name');
+  const rewardSubtextEl = document.getElementById('reward-subtext');
+
+  const skinUnlockBannerEl = document.getElementById('skin-unlock-banner');
+  const skinUnlockNameEl = document.getElementById('skin-unlock-name');
 
   const resultStampWrapEl = document.getElementById('result-stamp-wrap');
+  const resultStarsRowEl = document.getElementById('result-stars-row');
   const resultTitleEl = document.getElementById('result-title');
   const resultSubtitleEl = document.getElementById('result-subtitle');
   const reviewHeadingEl = document.getElementById('review-heading');
   const reviewListEl = document.getElementById('review-list');
+
+  const btnNextStage = document.getElementById('btn-next-stage');
   const btnReplaySame = document.getElementById('btn-replay-same');
   const btnReplaySelect = document.getElementById('btn-replay-select');
-  const courseBtns = Array.from(document.querySelectorAll('.course-btn'));
-  const diffTabs = Array.from(document.querySelectorAll('.diff-tab'));
-  const countTabs = Array.from(document.querySelectorAll('.count-tab'));
-
-  const previewAdd = document.getElementById('preview-add');
-  const previewSub = document.getElementById('preview-sub');
-  const previewMul = document.getElementById('preview-mul');
-  const previewDiv = document.getElementById('preview-div');
-
-  const badgeAdd = document.getElementById('badge-add');
-  const badgeSub = document.getElementById('badge-sub');
-  const badgeMul = document.getElementById('badge-mul');
-  const badgeDiv = document.getElementById('badge-div');
 
   // 配色パレット
   const COLORS = {
@@ -82,38 +91,194 @@
     ]
   };
 
-  const LEVEL_NAMES = {
-    easy: 'かんたん',
-    normal: 'ふつう',
-    hard: 'むずかしい'
+  const COURSE_NAMES = {
+    add: 'たしざん',
+    sub: 'ひきざん',
+    mul: 'かけざん',
+    div: 'わりざん'
   };
 
   // =========================================
-  // やりこみ要素：特別つみき図鑑データ（全12種）
+  // ステージ＆限定ご褒美つみき定義（全4コース×5ステージ＝20ステージ）
   // =========================================
-  const TOY_CATALOG = [
-    { id: 'dog', name: 'いぬ', color: '#ffd6a5', shape: 'dog' },
-    { id: 'cat', name: 'ねこ', color: '#ffadad', shape: 'cat' },
-    { id: 'bear', name: 'くま', color: '#d4a373', shape: 'bear' },
-    { id: 'rabbit', name: 'うさぎ', color: '#ffc6ff', shape: 'rabbit' },
-    { id: 'car', name: 'くるま', color: '#a0c4ff', shape: 'car' },
-    { id: 'train', name: 'でんしゃ', color: '#88d49e', shape: 'train' },
-    { id: 'plane', name: 'ひこうき', color: '#caffbf', shape: 'plane' },
-    { id: 'rocket', name: 'ロケット', color: '#fdffb6', shape: 'rocket' },
-    { id: 'apple', name: 'りんご', color: '#fe6d73', shape: 'apple' },
-    { id: 'star', name: 'ほし', color: '#f4d06f', shape: 'star' },
-    { id: 'castle', name: 'おしろ', color: '#e6ccb2', shape: 'castle' },
-    { id: 'crown', name: 'おうかん', color: '#f4a261', shape: 'crown' }
+  const STAGE_CATALOG = [
+    // たしざんコース（どうぶつシリーズ）
+    {
+      id: 'add_1', course: 'add', stageNum: 1,
+      title: '5までの たしざん', example: '2 ＋ [ ？ ] ＝ 5',
+      toy: { id: 'chick', name: 'ひよこ', color: '#ffe066', shape: 'chick' }
+    },
+    {
+      id: 'add_2', course: 'add', stageNum: 2,
+      title: '10を つくろう', example: '4 ＋ [ ？ ] ＝ 10',
+      toy: { id: 'rabbit', name: 'うさぎ', color: '#ffc6ff', shape: 'rabbit' }
+    },
+    {
+      id: 'add_3', course: 'add', stageNum: 3,
+      title: '10までの たしざん', example: '3 ＋ 5 ＝ [ ？ ]',
+      toy: { id: 'dog', name: 'こいぬ', color: '#ffd6a5', shape: 'dog' }
+    },
+    {
+      id: 'add_4', course: 'add', stageNum: 4,
+      title: 'くりあがりの たしざん', example: '7 ＋ [ ？ ] ＝ 13',
+      toy: { id: 'bear', name: 'こぐま', color: '#d4a373', shape: 'bear' }
+    },
+    {
+      id: 'add_5', course: 'add', stageNum: 5,
+      title: 'たしざん マスター', example: '14 ＋ [ ？ ] ＝ 21',
+      toy: { id: 'lion', name: 'ライオン', color: '#f4a261', shape: 'lion' }
+    },
+
+    // ひきざんコース（おやつ・フルーツシリーズ）
+    {
+      id: 'sub_1', course: 'sub', stageNum: 1,
+      title: '5までの ひきざん', example: '5 － [ ？ ] ＝ 2',
+      toy: { id: 'apple', name: 'りんご', color: '#ff758f', shape: 'apple' }
+    },
+    {
+      id: 'sub_2', course: 'sub', stageNum: 2,
+      title: '10からの ひきざん', example: '10 － [ ？ ] ＝ 6',
+      toy: { id: 'banana', name: 'バナナ', color: '#ffe066', shape: 'banana' }
+    },
+    {
+      id: 'sub_3', course: 'sub', stageNum: 3,
+      title: '10までの ひきざん', example: '8 － 3 ＝ [ ？ ]',
+      toy: { id: 'donut', name: 'ドーナツ', color: '#e6ccb2', shape: 'donut' }
+    },
+    {
+      id: 'sub_4', course: 'sub', stageNum: 4,
+      title: 'くりさがりの ひきざん', example: '13 － [ ？ ] ＝ 8',
+      toy: { id: 'icecream', name: 'アイス', color: '#a8e6cf', shape: 'icecream' }
+    },
+    {
+      id: 'sub_5', course: 'sub', stageNum: 5,
+      title: 'ひきざん マスター', example: '18 － [ ？ ] ＝ 9',
+      toy: { id: 'cake', name: 'ケーキ', color: '#ffadad', shape: 'cake' }
+    },
+
+    // かけざんコース（のりものシリーズ）
+    {
+      id: 'mul_1', course: 'mul', stageNum: 1,
+      title: '1・2の だん', example: '2 × [ ？ ] ＝ 8',
+      toy: { id: 'car', name: 'くるま', color: '#a0c4ff', shape: 'car' }
+    },
+    {
+      id: 'mul_2', course: 'mul', stageNum: 2,
+      title: '3・4の だん', example: '4 × [ ？ ] ＝ 12',
+      toy: { id: 'bus', name: 'バス', color: '#ffd166', shape: 'bus' }
+    },
+    {
+      id: 'mul_3', course: 'mul', stageNum: 3,
+      title: '5・6の だん', example: '6 × 5 ＝ [ ？ ]',
+      toy: { id: 'train', name: 'でんしゃ', color: '#88d49e', shape: 'train' }
+    },
+    {
+      id: 'mul_4', course: 'mul', stageNum: 4,
+      title: '7・8・9の だん', example: '8 × [ ？ ] ＝ 56',
+      toy: { id: 'plane', name: 'ひこうき', color: '#caffbf', shape: 'plane' }
+    },
+    {
+      id: 'mul_5', course: 'mul', stageNum: 5,
+      title: 'かけざん マスター', example: '7 × 9 ＝ [ ？ ]',
+      toy: { id: 'rocket', name: 'ロケット', color: '#fdffb6', shape: 'rocket' }
+    },
+
+    // わりざんコース（たからものシリーズ）
+    {
+      id: 'div_1', course: 'div', stageNum: 1,
+      title: '2で わる わりざん', example: '6 ÷ [ ？ ] ＝ 3',
+      toy: { id: 'flower', name: 'おはな', color: '#ffc6ff', shape: 'flower' }
+    },
+    {
+      id: 'div_2', course: 'div', stageNum: 2,
+      title: '3・4で わる わりざん', example: '12 ÷ [ ？ ] ＝ 4',
+      toy: { id: 'gem', name: 'エメラルド', color: '#80ed99', shape: 'gem' }
+    },
+    {
+      id: 'div_3', course: 'div', stageNum: 3,
+      title: '5・6で わる わりざん', example: '18 ÷ 6 ＝ [ ？ ]',
+      toy: { id: 'star', name: 'ほし', color: '#f4d06f', shape: 'star' }
+    },
+    {
+      id: 'div_4', course: 'div', stageNum: 4,
+      title: '7・8・9で わる わりざん', example: '24 ÷ [ ？ ] ＝ 3',
+      toy: { id: 'castle', name: 'おしろ', color: '#e6ccb2', shape: 'castle' }
+    },
+    {
+      id: 'div_5', course: 'div', stageNum: 5,
+      title: 'わりざん マスター', example: '36 ÷ [ ？ ] ＝ 6',
+      toy: { id: 'crown', name: 'おうかん', color: '#f4a261', shape: 'crown' }
+    }
   ];
 
+  // おもちゃカタログ（全20種）
+  const TOY_CATALOG = STAGE_CATALOG.map((s) => ({
+    ...s.toy,
+    stageId: s.id,
+    stageLabel: `${COURSE_NAMES[s.course]} ステージ${s.stageNum}`
+  }));
+
+  // =========================================
+  // 案C：すうじ積み木 きせかえスキン定義（全5種）
+  // =========================================
+  const SKIN_CATALOG = [
+    {
+      id: 'standard',
+      name: 'カラフル つみき',
+      condText: 'はじめから つかえるよ',
+      previewBg: '#ffcb77',
+      previewText: '#2c3e50',
+      checkUnlock: () => true
+    },
+    {
+      id: 'gold',
+      name: 'きんぴか ゴールド',
+      condText: 'たしざん ステージ5 クリア または ほし 10こ',
+      previewBg: '#ffd700',
+      previewText: '#5c3c00',
+      checkUnlock: (sd, stars) => (sd.stageStars['add_5'] >= 1) || stars >= 10
+    },
+    {
+      id: 'sweets',
+      name: 'おやつ スイーツ',
+      condText: 'ひきざん ステージ5 クリア または ほし 20こ',
+      previewBg: '#ffadad',
+      previewText: '#5a2a27',
+      checkUnlock: (sd, stars) => (sd.stageStars['sub_5'] >= 1) || stars >= 20
+    },
+    {
+      id: 'night',
+      name: 'きらきら ほしぞら',
+      condText: 'かけざん ステージ5 クリア または ほし 30こ',
+      previewBg: '#1d3557',
+      previewText: '#ffe066',
+      checkUnlock: (sd, stars) => (sd.stageStars['mul_5'] >= 1) || stars >= 30
+    },
+    {
+      id: 'rainbow',
+      name: 'にじいろ マスター',
+      condText: 'わりざん ステージ5 クリア または ほし 40こ',
+      previewBg: '#a8e6cf',
+      previewText: '#2c3e50',
+      checkUnlock: (sd, stars) => (sd.stageStars['div_5'] >= 1) || stars >= 40
+    }
+  ];
+
+  // =========================================
   // セーブデータ管理（localStorage）
-  const SAVE_KEY = 'suuji_tsumiki_save_v1';
+  // =========================================
+  const SAVE_KEY = 'suuji_tsumiki_save_v2';
   let saveData = {
-    medals: {}, // e.g. { 'add_easy': true, 'mul_hard': true }
-    unlockedToys: ['dog'], // 初期状態で1個解放
-    totalClears: 0,
-    perfectClears: 0
+    stageStars: {},        // { 'add_1': 3, ... }
+    unlockedToys: [],      // ['chick', ...]
+    unlockedSkins: ['standard'],
+    currentSkin: 'standard',
+    totalClears: 0
   };
+
+  function getTotalStars() {
+    return Object.values(saveData.stageStars).reduce((sum, v) => sum + (Number(v) || 0), 0);
+  }
 
   function loadSaveData() {
     try {
@@ -127,12 +292,41 @@
     } catch (e) {
       console.warn('saveData load failed', e);
     }
-    if (!Array.isArray(saveData.unlockedToys) || saveData.unlockedToys.length === 0) {
-      saveData.unlockedToys = ['dog'];
+
+    if (!saveData.stageStars || typeof saveData.stageStars !== 'object') {
+      saveData.stageStars = {};
     }
-    if (!saveData.medals || typeof saveData.medals !== 'object') {
-      saveData.medals = {};
+    if (!Array.isArray(saveData.unlockedToys)) {
+      saveData.unlockedToys = [];
     }
+    if (!Array.isArray(saveData.unlockedSkins) || saveData.unlockedSkins.length === 0) {
+      saveData.unlockedSkins = ['standard'];
+    }
+    if (!saveData.currentSkin) {
+      saveData.currentSkin = 'standard';
+    }
+
+    // すでにステージクリア済みのものがあればおもちゃも同期
+    STAGE_CATALOG.forEach((st) => {
+      if ((saveData.stageStars[st.id] || 0) >= 1 && !saveData.unlockedToys.includes(st.toy.id)) {
+        saveData.unlockedToys.push(st.toy.id);
+      }
+    });
+
+    // スキン解放チェック
+    checkAndUnlockSkins();
+  }
+
+  function checkAndUnlockSkins() {
+    const stars = getTotalStars();
+    const newlyUnlocked = [];
+    SKIN_CATALOG.forEach((skin) => {
+      if (!saveData.unlockedSkins.includes(skin.id) && skin.checkUnlock(saveData, stars)) {
+        saveData.unlockedSkins.push(skin.id);
+        newlyUnlocked.push(skin);
+      }
+    });
+    return newlyUnlocked;
   }
 
   function saveGameData() {
@@ -141,14 +335,20 @@
     } catch (e) {
       console.warn('saveGameData failed', e);
     }
-    updateZukanUI();
-    updateMedalBadges();
+    refreshAllTitleUI();
+  }
+
+  // ステージが解放されているか判定（ステージ1は常時解放、ステージ2以降は前ステージの星>=1で解放）
+  function isStageUnlocked(stageObj) {
+    if (stageObj.stageNum === 1) return true;
+    const prevId = `${stageObj.course}_${stageObj.stageNum - 1}`;
+    return (saveData.stageStars[prevId] || 0) >= 1;
   }
 
   // ゲーム進行状態
   let totalQuestions = 5;
-  let currentLevel = 'easy';
-  let currentCourse = 'add';
+  let selectedCourseTab = 'add';
+  let currentStageObj = STAGE_CATALOG[0];
   let isSandboxMode = false;
   let questionIndex = 0;
   let questions = [];
@@ -193,7 +393,7 @@
     activeTimers = [];
   }
 
-  // 積み木の色
+  // 積み木の色（標準パステル）
   function getBlockColor(num) {
     if (num <= 0) return '#e2e2e2';
     if (num === 10) return '#ffcb77';
@@ -210,49 +410,247 @@
     return { w, h };
   }
 
-  // プレビュー＆メダルバッジ更新
-  function updateCoursePreviews() {
-    if (currentLevel === 'easy') {
-      previewAdd.textContent = '4 ＋ [ ？ ] ＝ 10';
-      previewSub.textContent = '8 － [ ？ ] ＝ 5';
-      previewMul.textContent = '2 × [ ？ ] ＝ 8';
-      previewDiv.textContent = '6 ÷ [ ？ ] ＝ 3';
-    } else if (currentLevel === 'normal') {
-      previewAdd.textContent = '7 ＋ [ ？ ] ＝ 13';
-      previewSub.textContent = '13 － [ ？ ] ＝ 8';
-      previewMul.textContent = '4 × [ ？ ] ＝ 12';
-      previewDiv.textContent = '15 ÷ [ ？ ] ＝ 5';
-    } else {
-      previewAdd.textContent = '14 ＋ [ ？ ] ＝ 21';
-      previewSub.textContent = '18 － [ ？ ] ＝ 9';
-      previewMul.textContent = '7 × [ ？ ] ＝ 56';
-      previewDiv.textContent = '24 ÷ [ ？ ] ＝ 6';
-    }
-    updateMedalBadges();
+  // =========================================
+  // SVG生成ヘルパー（星＆20種のおもちゃアイコン）
+  // =========================================
+  function generateStarSVG(isFilled, className = 'stage-star-svg') {
+    const fill = isFilled ? '#ffd166' : '#dcdcdc';
+    const stroke = '#2c3e50';
+    return `
+      <svg viewBox="0 0 36 36" class="${className}">
+        <polygon
+          points="18,3 22.5,12.5 33,14 25.2,21.2 27.2,31.5 18,26.4 8.8,31.5 10.8,21.2 3,14 13.5,12.5"
+          fill="${fill}"
+          stroke="${stroke}"
+          stroke-width="2.6"
+          stroke-linejoin="round"
+        />
+      </svg>
+    `;
   }
 
-  // 各コースの獲得メダル表示（現在選択中の難易度で満点を取っているか）
-  function updateMedalBadges() {
-    const courses = ['add', 'sub', 'mul', 'div'];
-    const badgeMap = { add: badgeAdd, sub: badgeSub, mul: badgeMul, div: badgeDiv };
+  function generateToySVG(toy, isUnlocked) {
+    const color = isUnlocked ? toy.color : '#b8b8b8';
+    const stroke = COLORS.navy;
+    const subWhite = isUnlocked ? '#ffffff' : '#d0d0d0';
+    const accentRed = isUnlocked ? '#ff758f' : '#a0a0a0';
+    const s = toy.shape;
 
-    courses.forEach((c) => {
-      const el = badgeMap[c];
-      const key = `${c}_${currentLevel}`;
-      if (saveData.medals[key]) {
-        el.textContent = 'きんメダル';
-        el.classList.add('is-visible');
-      } else {
-        el.textContent = '';
-        el.classList.remove('is-visible');
+    if (s === 'chick') {
+      return `<svg viewBox="0 0 60 60" width="100%" height="100%">
+        <circle cx="30" cy="33" r="19" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        <circle cx="23" cy="29" r="2.8" fill="${stroke}"/>
+        <circle cx="37" cy="29" r="2.8" fill="${stroke}"/>
+        <polygon points="30,32 25,37 35,37" fill="${accentRed}" stroke="${stroke}" stroke-width="2"/>
+      </svg>`;
+    } else if (s === 'rabbit') {
+      return `<svg viewBox="0 0 60 60" width="100%" height="100%">
+        <ellipse cx="22" cy="16" rx="5" ry="11" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        <ellipse cx="38" cy="16" rx="5" ry="11" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        <rect x="14" y="23" width="32" height="27" rx="12" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        <circle cx="24" cy="34" r="2.8" fill="${stroke}"/>
+        <circle cx="36" cy="34" r="2.8" fill="${stroke}"/>
+        <circle cx="30" cy="40" r="2.5" fill="${accentRed}"/>
+      </svg>`;
+    } else if (s === 'dog') {
+      return `<svg viewBox="0 0 60 60" width="100%" height="100%">
+        <rect x="12" y="16" width="36" height="32" rx="8" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        <circle cx="15" cy="18" r="7" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        <circle cx="45" cy="18" r="7" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        <circle cx="23" cy="30" r="3" fill="${stroke}"/>
+        <circle cx="37" cy="30" r="3" fill="${stroke}"/>
+        <ellipse cx="30" cy="38" rx="4.5" ry="3" fill="${stroke}"/>
+      </svg>`;
+    } else if (s === 'bear') {
+      return `<svg viewBox="0 0 60 60" width="100%" height="100%">
+        <circle cx="16" cy="16" r="7" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        <circle cx="44" cy="16" r="7" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        <rect x="12" y="17" width="36" height="31" rx="12" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        <ellipse cx="30" cy="37" rx="8" ry="6" fill="${subWhite}" stroke="${stroke}" stroke-width="2"/>
+        <circle cx="23" cy="28" r="2.8" fill="${stroke}"/>
+        <circle cx="37" cy="28" r="2.8" fill="${stroke}"/>
+        <circle cx="30" cy="35" r="2.8" fill="${stroke}"/>
+      </svg>`;
+    } else if (s === 'lion') {
+      return `<svg viewBox="0 0 60 60" width="100%" height="100%">
+        <circle cx="30" cy="31" r="22" fill="${accentRed}" stroke="${stroke}" stroke-width="3"/>
+        <circle cx="30" cy="31" r="15" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        <circle cx="24" cy="28" r="2.5" fill="${stroke}"/>
+        <circle cx="36" cy="28" r="2.5" fill="${stroke}"/>
+        <polygon points="30,33 27,37 33,37" fill="${stroke}"/>
+      </svg>`;
+    } else if (s === 'apple') {
+      return `<svg viewBox="0 0 60 60" width="100%" height="100%">
+        <rect x="28" y="8" width="4" height="10" rx="2" fill="${stroke}"/>
+        <circle cx="24" cy="34" r="15" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        <circle cx="36" cy="34" r="15" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+      </svg>`;
+    } else if (s === 'banana') {
+      return `<svg viewBox="0 0 60 60" width="100%" height="100%">
+        <path d="M 16 42 Q 36 46 46 16 Q 36 30 16 32 Z" fill="${color}" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/>
+      </svg>`;
+    } else if (s === 'donut') {
+      return `<svg viewBox="0 0 60 60" width="100%" height="100%">
+        <circle cx="30" cy="31" r="19" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        <circle cx="30" cy="31" r="7" fill="${subWhite}" stroke="${stroke}" stroke-width="3"/>
+      </svg>`;
+    } else if (s === 'icecream') {
+      return `<svg viewBox="0 0 60 60" width="100%" height="100%">
+        <polygon points="20,30 40,30 30,52" fill="#f4a261" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/>
+        <circle cx="30" cy="24" r="13" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+      </svg>`;
+    } else if (s === 'cake') {
+      return `<svg viewBox="0 0 60 60" width="100%" height="100%">
+        <rect x="12" y="26" width="36" height="22" rx="4" fill="${subWhite}" stroke="${stroke}" stroke-width="3"/>
+        <rect x="12" y="26" width="36" height="9" rx="3" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        <circle cx="30" cy="18" r="6" fill="${accentRed}" stroke="${stroke}" stroke-width="3"/>
+      </svg>`;
+    } else if (s === 'car') {
+      return `<svg viewBox="0 0 60 60" width="100%" height="100%">
+        <rect x="10" y="26" width="40" height="16" rx="4" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        <rect x="18" y="16" width="24" height="12" rx="4" fill="${subWhite}" stroke="${stroke}" stroke-width="3"/>
+        <circle cx="19" cy="44" r="6" fill="${stroke}"/>
+        <circle cx="41" cy="44" r="6" fill="${stroke}"/>
+      </svg>`;
+    } else if (s === 'bus') {
+      return `<svg viewBox="0 0 60 60" width="100%" height="100%">
+        <rect x="10" y="16" width="40" height="26" rx="5" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        <rect x="15" y="21" width="12" height="9" rx="2" fill="${subWhite}" stroke="${stroke}" stroke-width="2.5"/>
+        <rect x="33" y="21" width="12" height="9" rx="2" fill="${subWhite}" stroke="${stroke}" stroke-width="2.5"/>
+        <circle cx="19" cy="44" r="5.5" fill="${stroke}"/>
+        <circle cx="41" cy="44" r="5.5" fill="${stroke}"/>
+      </svg>`;
+    } else if (s === 'train') {
+      return `<svg viewBox="0 0 60 60" width="100%" height="100%">
+        <rect x="13" y="12" width="34" height="32" rx="5" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        <rect x="19" y="18" width="22" height="11" rx="2" fill="${subWhite}" stroke="${stroke}" stroke-width="2.5"/>
+        <circle cx="22" cy="36" r="3" fill="${subWhite}" stroke="${stroke}" stroke-width="2"/>
+        <circle cx="38" cy="36" r="3" fill="${subWhite}" stroke="${stroke}" stroke-width="2"/>
+        <line x1="16" y1="49" x2="44" y2="49" stroke="${stroke}" stroke-width="4" stroke-linecap="round"/>
+      </svg>`;
+    } else if (s === 'plane') {
+      return `<svg viewBox="0 0 60 60" width="100%" height="100%">
+        <polygon points="30,10 38,46 22,46" fill="${subWhite}" stroke="${stroke}" stroke-width="3"/>
+        <polygon points="8,28 52,28 52,36 8,36" fill="${color}" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/>
+      </svg>`;
+    } else if (s === 'rocket') {
+      return `<svg viewBox="0 0 60 60" width="100%" height="100%">
+        <path d="M 30 8 Q 42 24 40 44 L 20 44 Q 18 24 30 8 Z" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        <polygon points="16,36 10,48 20,44" fill="${accentRed}" stroke="${stroke}" stroke-width="3"/>
+        <polygon points="44,36 50,48 40,44" fill="${accentRed}" stroke="${stroke}" stroke-width="3"/>
+        <circle cx="30" cy="26" r="5" fill="${subWhite}" stroke="${stroke}" stroke-width="2.5"/>
+      </svg>`;
+    } else if (s === 'flower') {
+      return `<svg viewBox="0 0 60 60" width="100%" height="100%">
+        <circle cx="30" cy="17" r="9" fill="${color}" stroke="${stroke}" stroke-width="2.5"/>
+        <circle cx="30" cy="43" r="9" fill="${color}" stroke="${stroke}" stroke-width="2.5"/>
+        <circle cx="17" cy="30" r="9" fill="${color}" stroke="${stroke}" stroke-width="2.5"/>
+        <circle cx="43" cy="30" r="9" fill="${color}" stroke="${stroke}" stroke-width="2.5"/>
+        <circle cx="30" cy="30" r="8" fill="#ffe066" stroke="${stroke}" stroke-width="2.5"/>
+      </svg>`;
+    } else if (s === 'gem') {
+      return `<svg viewBox="0 0 60 60" width="100%" height="100%">
+        <polygon points="20,14 40,14 50,26 30,48 10,26" fill="${color}" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/>
+        <line x1="10" y1="26" x2="50" y2="26" stroke="${stroke}" stroke-width="2.5"/>
+      </svg>`;
+    } else if (s === 'star') {
+      return `<svg viewBox="0 0 60 60" width="100%" height="100%">
+        <polygon points="30,8 36,22 51,24 40,34 43,49 30,41 17,49 20,34 9,24 24,22" fill="${color}" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/>
+      </svg>`;
+    } else if (s === 'castle') {
+      return `<svg viewBox="0 0 60 60" width="100%" height="100%">
+        <rect x="14" y="24" width="32" height="24" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        <polygon points="12,24 22,12 32,24" fill="${accentRed}" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/>
+        <polygon points="28,24 38,12 48,24" fill="${accentRed}" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/>
+        <rect x="25" y="34" width="10" height="14" rx="4" fill="${subWhite}" stroke="${stroke}" stroke-width="2.5"/>
+      </svg>`;
+    } else {
+      // crown
+      return `<svg viewBox="0 0 60 60" width="100%" height="100%">
+        <polygon points="10,44 12,20 24,32 30,14 36,32 48,20 50,44" fill="${color}" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/>
+        <circle cx="30" cy="36" r="3.5" fill="${accentRed}" stroke="${stroke}" stroke-width="2"/>
+      </svg>`;
+    }
+  }
+
+  // =========================================
+  // タイトル画面・ステージリスト・図鑑・きせかえUI更新
+  // =========================================
+  function refreshAllTitleUI() {
+    checkAndUnlockSkins();
+    const totalStars = getTotalStars();
+    titleStarSvgEl.innerHTML = generateStarSVG(true, 'stage-star-svg');
+    totalStarsCountEl.textContent = String(totalStars);
+    zukanBadgeCountEl.textContent = String(saveData.unlockedToys.length);
+    skinBadgeCountEl.textContent = String(saveData.unlockedSkins.length);
+
+    renderStageList();
+    updateZukanUI();
+    updateSkinUI();
+    updateSandboxToySelector();
+  }
+
+  function renderStageList() {
+    stageListContainerEl.innerHTML = '';
+    const stages = STAGE_CATALOG.filter((s) => s.course === selectedCourseTab);
+
+    stages.forEach((st) => {
+      const unlocked = isStageUnlocked(st);
+      const stars = saveData.stageStars[st.id] || 0;
+      const hasToy = saveData.unlockedToys.includes(st.toy.id);
+
+      const row = document.createElement('div');
+      row.className = `stage-row-card ${unlocked ? '' : 'is-locked'}`;
+
+      let starsHtml = '';
+      for (let i = 1; i <= 3; i++) {
+        starsHtml += generateStarSVG(i <= stars, 'stage-star-svg');
       }
+
+      const toySvg = generateToySVG(st.toy, hasToy);
+      const rewardStatusText = hasToy ? 'ゲットずみ！' : 'クリアで ゲット！';
+      const rewardStatusClass = hasToy ? 'stage-reward-tag is-got' : 'stage-reward-tag';
+      const rewardToyName = hasToy ? st.toy.name : `「${st.toy.name}」`;
+
+      row.innerHTML = `
+        <div class="stage-left-info">
+          <div class="stage-top-line">
+            <span class="stage-num-badge">ステージ ${st.stageNum}</span>
+            <span class="stage-title-text">${st.title}</span>
+          </div>
+          <div class="stage-sub-line">
+            <div class="stage-stars-box" aria-label="ほし ${stars}こ">${starsHtml}</div>
+            <span class="stage-example-text">れい：${st.example}</span>
+          </div>
+        </div>
+
+        <div class="stage-reward-preview">
+          <div class="stage-reward-icon">${toySvg}</div>
+          <div class="stage-reward-info">
+            <span class="${rewardStatusClass}">${rewardStatusText}</span>
+            <span class="stage-reward-name">${rewardToyName}</span>
+          </div>
+        </div>
+
+        <button class="stage-play-btn" type="button" ${unlocked ? '' : 'disabled'}>
+          <span>${unlocked ? 'あそぶ！' : 'カギ'}</span>
+        </button>
+      `;
+
+      const playBtn = row.querySelector('.stage-play-btn');
+      if (unlocked) {
+        playBtn.addEventListener('click', () => {
+          window.se.playButton();
+          startStage(st, totalQuestions);
+        });
+      }
+
+      stageListContainerEl.appendChild(row);
     });
   }
 
-  // 図鑑UIの更新
   function updateZukanUI() {
     const unlockedCount = saveData.unlockedToys.length;
-    zukanBadgeCountEl.textContent = String(unlockedCount);
     zukanTotalCollectedEl.textContent = String(unlockedCount);
 
     zukanGridEl.innerHTML = '';
@@ -265,17 +663,51 @@
       card.innerHTML = `
         <div class="zukan-icon-wrap">${iconSvg}</div>
         <span class="zukan-item-name">${isUnlocked ? toy.name : '？？？'}</span>
+        <span class="zukan-item-stage">${toy.stageLabel}</span>
       `;
       zukanGridEl.appendChild(card);
     });
-
-    updateSandboxToySelector();
   }
 
-  // 広場用積み木セレクターの更新
+  function updateSkinUI() {
+    skinListEl.innerHTML = '';
+    SKIN_CATALOG.forEach((skin) => {
+      const isUnlocked = saveData.unlockedSkins.includes(skin.id);
+      const isEquipped = saveData.currentSkin === skin.id;
+
+      const row = document.createElement('div');
+      row.className = `skin-row-card ${isEquipped ? 'is-active' : ''} ${isUnlocked ? '' : 'is-locked'}`;
+
+      const btnLabel = !isUnlocked ? 'まだ ひらいてないよ' : (isEquipped ? 'つかいちゅう' : 'これに する！');
+
+      row.innerHTML = `
+        <div class="skin-preview-box" style="background-color: ${skin.previewBg}; color: ${skin.previewText};">
+          10
+        </div>
+        <div class="skin-info">
+          <span class="skin-name">${skin.name}</span>
+          <span class="skin-cond">${skin.condText}</span>
+        </div>
+        <button class="skin-select-btn ${isEquipped ? 'is-equipped' : ''}" type="button" ${isUnlocked ? '' : 'disabled'}>
+          ${btnLabel}
+        </button>
+      `;
+
+      const btn = row.querySelector('.skin-select-btn');
+      if (isUnlocked && !isEquipped) {
+        btn.addEventListener('click', () => {
+          window.se.playButton();
+          saveData.currentSkin = skin.id;
+          saveGameData();
+        });
+      }
+
+      skinListEl.appendChild(row);
+    });
+  }
+
   function updateSandboxToySelector() {
     sandboxToySelectorEl.innerHTML = '';
-    // 解放されたおもちゃ積み木ボタン
     saveData.unlockedToys.forEach((toyId) => {
       const toy = TOY_CATALOG.find((t) => t.id === toyId);
       if (!toy) return;
@@ -290,8 +722,7 @@
       sandboxToySelectorEl.appendChild(btn);
     });
 
-    // 好きな数字も落とせるように数字ブロックボタン（1〜10）
-    [1, 2, 3, 4, 5, 10].forEach((n) => {
+    [1, 2, 3, 5, 10].forEach((n) => {
       const btn = document.createElement('button');
       btn.className = 'toy-drop-btn';
       btn.type = 'button';
@@ -304,90 +735,12 @@
     });
   }
 
-  // 積み木アイコンSVGの生成
-  function generateToySVG(toy, isUnlocked) {
-    const color = isUnlocked ? toy.color : '#aaaaaa';
-    const stroke = COLORS.navy;
-
-    if (toy.shape === 'dog') {
-      return `
-        <svg viewBox="0 0 60 60" width="100%" height="100%">
-          <rect x="12" y="16" width="36" height="32" rx="8" fill="${color}" stroke="${stroke}" stroke-width="3"/>
-          <circle cx="16" cy="18" r="8" fill="${color}" stroke="${stroke}" stroke-width="3"/>
-          <circle cx="44" cy="18" r="8" fill="${color}" stroke="${stroke}" stroke-width="3"/>
-          <circle cx="23" cy="30" r="3" fill="${stroke}"/>
-          <circle cx="37" cy="30" r="3" fill="${stroke}"/>
-          <ellipse cx="30" cy="38" rx="5" ry="3.5" fill="${stroke}"/>
-        </svg>
-      `;
-    } else if (toy.shape === 'cat') {
-      return `
-        <svg viewBox="0 0 60 60" width="100%" height="100%">
-          <polygon points="14,14 24,24 10,28" fill="${color}" stroke="${stroke}" stroke-width="3"/>
-          <polygon points="46,14 36,24 50,28" fill="${color}" stroke="${stroke}" stroke-width="3"/>
-          <rect x="12" y="20" width="36" height="30" rx="10" fill="${color}" stroke="${stroke}" stroke-width="3"/>
-          <circle cx="23" cy="32" r="3" fill="${stroke}"/>
-          <circle cx="37" cy="32" r="3" fill="${stroke}"/>
-          <polygon points="30,38 27,42 33,42" fill="${stroke}"/>
-        </svg>
-      `;
-    } else if (toy.shape === 'car') {
-      return `
-        <svg viewBox="0 0 60 60" width="100%" height="100%">
-          <rect x="10" y="26" width="40" height="18" rx="4" fill="${color}" stroke="${stroke}" stroke-width="3"/>
-          <rect x="18" y="16" width="24" height="12" rx="4" fill="#ffffff" stroke="${stroke}" stroke-width="3"/>
-          <circle cx="18" cy="45" r="6" fill="${stroke}"/>
-          <circle cx="42" cy="45" r="6" fill="${stroke}"/>
-        </svg>
-      `;
-    } else if (toy.shape === 'star') {
-      return `
-        <svg viewBox="0 0 60 60" width="100%" height="100%">
-          <polygon points="30,8 36,22 51,24 40,34 43,49 30,41 17,49 20,34 9,24 24,22" fill="${color}" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/>
-        </svg>
-      `;
-    } else if (toy.shape === 'apple') {
-      return `
-        <svg viewBox="0 0 60 60" width="100%" height="100%">
-          <rect x="28" y="8" width="4" height="10" rx="2" fill="#8b5a2b" stroke="${stroke}" stroke-width="2"/>
-          <circle cx="24" cy="34" r="16" fill="${color}" stroke="${stroke}" stroke-width="3"/>
-          <circle cx="36" cy="34" r="16" fill="${color}" stroke="${stroke}" stroke-width="3"/>
-        </svg>
-      `;
-    } else if (toy.shape === 'rocket') {
-      return `
-        <svg viewBox="0 0 60 60" width="100%" height="100%">
-          <path d="M 30 8 Q 42 24 40 44 L 20 44 Q 18 24 30 8 Z" fill="${color}" stroke="${stroke}" stroke-width="3"/>
-          <polygon points="16,36 10,48 20,44" fill="#ffadad" stroke="${stroke}" stroke-width="3"/>
-          <polygon points="44,36 50,48 40,44" fill="#ffadad" stroke="${stroke}" stroke-width="3"/>
-          <circle cx="30" cy="26" r="5" fill="#ffffff" stroke="${stroke}" stroke-width="2.5"/>
-        </svg>
-      `;
-    } else {
-      // 共通積み木ブロック
-      return `
-        <svg viewBox="0 0 60 60" width="100%" height="100%">
-          <rect x="12" y="14" width="36" height="34" rx="8" fill="${color}" stroke="${stroke}" stroke-width="3"/>
-          <circle cx="30" cy="31" r="9" fill="#ffffff" stroke="${stroke}" stroke-width="3"/>
-        </svg>
-      `;
-    }
-  }
-
-  // 未解放の積み木を1つランダムに選んで解放
-  function awardNewToy() {
-    const lockedToys = TOY_CATALOG.filter((t) => !saveData.unlockedToys.includes(t.id));
-    if (lockedToys.length === 0) return null;
-
-    const newToy = lockedToys[Math.floor(Math.random() * lockedToys.length)];
-    saveData.unlockedToys.push(newToy.id);
-    saveGameData();
-    return newToy;
-  }
-
-  // 問題プール生成
-  function generateQuestions(course, level, count) {
+  // =========================================
+  // ステージ別 問題生成ロジック
+  // =========================================
+  function generateQuestionsForStage(stageObj, count) {
     const pool = [];
+    const { course, stageNum } = stageObj;
 
     const shuffle = (arr) => {
       for (let i = arr.length - 1; i > 0; i--) {
@@ -400,38 +753,64 @@
     };
 
     if (course === 'add') {
-      if (level === 'easy') {
-        for (let a = 1; a <= 9; a++) {
-          pool.push({ type: 'add', op: '＋', first: a, second: 10 - a, result: 10 });
-        }
-        for (let res = 4; res <= 9; res++) {
+      if (stageNum === 1) {
+        // 5までのたしざん
+        for (let res = 2; res <= 5; res++) {
           for (let a = 1; a < res; a++) {
             pool.push({ type: 'add', op: '＋', first: a, second: res - a, result: res });
           }
         }
-      } else if (level === 'normal') {
+      } else if (stageNum === 2) {
+        // 10をつくるたしざん
+        for (let a = 1; a <= 9; a++) {
+          pool.push({ type: 'add', op: '＋', first: a, second: 10 - a, result: 10 });
+        }
+      } else if (stageNum === 3) {
+        // 6〜10までのたしざん
+        for (let res = 6; res <= 10; res++) {
+          for (let a = 1; a < res; a++) {
+            pool.push({ type: 'add', op: '＋', first: a, second: res - a, result: res });
+          }
+        }
+      } else if (stageNum === 4) {
+        // くりあがりのたしざん (11〜18)
         for (let a = 4; a <= 9; a++) {
-          for (let b = 3; b <= 9; b++) {
+          for (let b = 4; b <= 9; b++) {
             if (a + b >= 11 && a + b <= 18) {
               pool.push({ type: 'add', op: '＋', first: a, second: b, result: a + b });
             }
           }
         }
       } else {
-        for (let a = 11; a <= 18; a++) {
-          for (let b = 4; b <= 9; b++) {
+        // たしざんマスター (11〜18 + 3〜9)
+        for (let a = 11; a <= 17; a++) {
+          for (let b = 3; b <= 8; b++) {
             pool.push({ type: 'add', op: '＋', first: a, second: b, result: a + b });
           }
         }
       }
     } else if (course === 'sub') {
-      if (level === 'easy') {
-        for (let a = 4; a <= 10; a++) {
+      if (stageNum === 1) {
+        // 5までのひきざん
+        for (let a = 2; a <= 5; a++) {
           for (let b = 1; b < a; b++) {
             pool.push({ type: 'sub', op: '－', first: a, second: b, result: a - b });
           }
         }
-      } else if (level === 'normal') {
+      } else if (stageNum === 2) {
+        // 10からのひきざん
+        for (let b = 1; b <= 9; b++) {
+          pool.push({ type: 'sub', op: '－', first: 10, second: b, result: 10 - b });
+        }
+      } else if (stageNum === 3) {
+        // 6〜10のひきざん
+        for (let a = 6; a <= 10; a++) {
+          for (let b = 1; b < a; b++) {
+            pool.push({ type: 'sub', op: '－', first: a, second: b, result: a - b });
+          }
+        }
+      } else if (stageNum === 4) {
+        // くりさがりのひきざん (11〜16)
         for (let a = 11; a <= 16; a++) {
           for (let b = a - 9; b <= 9; b++) {
             const res = a - b;
@@ -441,55 +820,46 @@
           }
         }
       } else {
-        for (let a = 17; a <= 20; a++) {
-          for (let b = 6; b <= 9; b++) {
+        // ひきざんマスター (15〜20)
+        for (let a = 15; a <= 20; a++) {
+          for (let b = 5; b <= 9; b++) {
             pool.push({ type: 'sub', op: '－', first: a, second: b, result: a - b });
           }
         }
       }
     } else if (course === 'mul') {
-      if (level === 'easy') {
-        [1, 2].forEach((a) => {
-          for (let b = 1; b <= 9; b++) {
-            pool.push({ type: 'mul', op: '×', first: a, second: b, result: a * b });
-          }
-        });
-      } else if (level === 'normal') {
-        [1, 2, 3, 4].forEach((a) => {
-          for (let b = 1; b <= 9; b++) {
-            pool.push({ type: 'mul', op: '×', first: a, second: b, result: a * b });
-            if (a >= 3) {
-              pool.push({ type: 'mul', op: '×', first: a, second: b, result: a * b });
-            }
-          }
-        });
-      } else {
-        for (let a = 1; a <= 9; a++) {
-          for (let b = 1; b <= 9; b++) {
-            pool.push({ type: 'mul', op: '×', first: a, second: b, result: a * b });
-          }
+      const danMap = {
+        1: [1, 2],
+        2: [3, 4],
+        3: [5, 6],
+        4: [7, 8, 9],
+        5: [2, 3, 4, 5, 6, 7, 8, 9]
+      };
+      const dans = danMap[stageNum] || [1, 2];
+      dans.forEach((a) => {
+        for (let b = 1; b <= 9; b++) {
+          pool.push({ type: 'mul', op: '×', first: a, second: b, result: a * b });
         }
-      }
+      });
     } else if (course === 'div') {
-      if (level === 'easy') {
-        [4, 6, 8, 10, 12, 14, 16].forEach((a) => {
-          pool.push({ type: 'div', op: '÷', first: a, second: 2, result: a / 2 });
-        });
-      } else if (level === 'normal') {
-        [3, 4, 5].forEach((b) => {
-          for (let res = 2; res <= 6; res++) {
-            const a = b * res;
-            pool.push({ type: 'div', op: '÷', first: a, second: b, result: res });
-          }
-        });
-      } else {
-        [6, 7, 8].forEach((b) => {
-          for (let res = 2; res <= 5; res++) {
-            const a = b * res;
-            pool.push({ type: 'div', op: '÷', first: a, second: b, result: res });
-          }
-        });
-      }
+      const divMap = {
+        1: [2],
+        2: [3, 4],
+        3: [5, 6],
+        4: [7, 8, 9],
+        5: [2, 3, 4, 5, 6, 7, 8, 9]
+      };
+      const divisors = divMap[stageNum] || [2];
+      divisors.forEach((b) => {
+        for (let res = 2; res <= 6; res++) {
+          pool.push({ type: 'div', op: '÷', first: b * res, second: b, result: res });
+        }
+      });
+    }
+
+    // プールが少ない場合は繰り返して補充
+    while (pool.length < count) {
+      pool.push(...pool);
     }
 
     shuffle(pool);
@@ -504,13 +874,12 @@
         ...q,
         pattern,
         answer,
-        choices: generateFourChoices(answer, q.type, level)
+        choices: generateFourChoices(answer, q.type, stageNum)
       };
     });
   }
 
-  // 4択ボタン選択肢の生成
-  function generateFourChoices(correctAnswer, qType, level) {
+  function generateFourChoices(correctAnswer, qType, stageNum) {
     const set = new Set([correctAnswer]);
     const offsets = [-1, 1, -2, 2, -3, 3, -4, 4];
 
@@ -523,12 +892,7 @@
     }
 
     while (set.size < 4) {
-      let maxRand = 12;
-      if (qType === 'mul') {
-        maxRand = level === 'hard' ? 81 : (level === 'normal' ? 36 : 18);
-      } else if (level === 'hard') {
-        maxRand = 28;
-      }
+      const maxRand = qType === 'mul' ? (stageNum >= 4 ? 81 : 36) : 25;
       const r = Math.floor(Math.random() * maxRand) + 1;
       set.add(r);
     }
@@ -536,7 +900,9 @@
     return Array.from(set).sort((a, b) => a - b);
   }
 
-  // Matter.js 初期化
+  // =========================================
+  // Matter.js 物理エンジン初期化・ステージ制御
+  // =========================================
   function initPhysics() {
     engine = Engine.create();
     world = engine.world;
@@ -546,7 +912,6 @@
     Events.on(engine, 'collisionStart', onCollisionStart);
   }
 
-  // ステージ構築
   function setupStageGeometry() {
     const rect = stageContainer.getBoundingClientRect();
     stageWidth = Math.max(280, Math.floor(rect.width));
@@ -618,86 +983,78 @@
 
     trayBodies = [trayBottom, leftRim, rightRim];
     World.add(world, trayBodies);
+  }
 
-    if (baseBlock && !fallingBlock && transformedBlocks.length === 0 && !isSandboxMode) {
-      const { h } = getBlockDimensions(baseBlock.numberValue);
-      Body.setPosition(baseBlock, {
-        x: centerX,
-        y: trayY - trayThickness / 2 - h / 2 - 2
-      });
-      Body.setVelocity(baseBlock, { x: 0, y: 0 });
-      Body.setAngle(baseBlock, 0);
+  function createNumberBlock(x, y, num, isFalling = false) {
+    const { w, h } = getBlockDimensions(num);
+    const body = Bodies.rectangle(x, y, w, h, {
+      chamfer: { radius: 12 },
+      restitution: isFalling ? 0.2 : 0.45,
+      friction: 0.6,
+      frictionAir: 0.015,
+      density: 0.002,
+      label: isFalling ? 'fallingBlock' : 'numberBlock'
+    });
+    body.numberValue = num;
+    body.customW = w;
+    body.customH = h;
+    body.popScale = 1.0;
+
+    World.add(world, body);
+    return body;
+  }
+
+  function clearBlocks() {
+    if (baseBlock) {
+      World.remove(world, baseBlock);
+      baseBlock = null;
+    }
+    if (fallingBlock) {
+      World.remove(world, fallingBlock);
+      fallingBlock = null;
+    }
+    if (transformedBlocks.length > 0) {
+      World.remove(world, transformedBlocks);
+      transformedBlocks = [];
+    }
+    if (sandboxBodies.length > 0) {
+      World.remove(world, sandboxBodies);
+      sandboxBodies = [];
     }
   }
 
-  // ブロック生成
-  function createNumberBlock(x, y, num, isFalling = false) {
-    const { w, h } = getBlockDimensions(num);
-    const block = Bodies.rectangle(x, y, w, h, {
-      chamfer: { radius: 14 },
-      restitution: isFalling ? 0.42 : 0.25,
-      friction: 0.6,
-      frictionAir: 0.012,
-      density: 0.002,
-      label: 'numberBlock'
-    });
-
-    block.numberValue = num;
-    block.customW = w;
-    block.customH = h;
-    block.popScale = isFalling ? 0.85 : 0.7;
-    World.add(world, block);
-    return block;
-  }
-
-  // 全ブロッククリア
-  function clearBlocks() {
-    if (baseBlock) World.remove(world, baseBlock);
-    if (fallingBlock) World.remove(world, fallingBlock);
-    transformedBlocks.forEach((b) => {
-      if (b) World.remove(world, b);
-    });
-    sandboxBodies.forEach((b) => {
-      if (b) World.remove(world, b);
-    });
-    baseBlock = null;
-    fallingBlock = null;
-    transformedBlocks = [];
-    sandboxBodies = [];
-    hasTriggeredCollision = false;
-  }
-
-  // トレイ上の初期ブロック配置
   function spawnBaseBlock(num) {
     clearBlocks();
     const { h } = getBlockDimensions(num);
     const centerX = stageWidth / 2;
-    const startY = trayY - 11 - h / 2 - 4;
-    baseBlock = createNumberBlock(centerX, startY, num, false);
+    const spawnY = trayY - 11 - h / 2 - 4;
+    baseBlock = createNumberBlock(centerX, spawnY, num, false);
   }
 
-  // コース開始
-  function startCourse(course, level, count) {
+  // ステージ開始
+  function startStage(stageObj, count) {
     isSandboxMode = false;
     clearAllTimers();
-    currentCourse = course;
-    currentLevel = level || currentLevel;
+    currentStageObj = stageObj;
     totalQuestions = count || totalQuestions;
     questionIndex = 0;
     solvedHistory = [];
-    questions = generateQuestions(currentCourse, currentLevel, totalQuestions);
+    questions = generateQuestionsForStage(currentStageObj, totalQuestions);
 
     titleOverlay.classList.add('is-hidden');
+    titleOverlay.setAttribute('aria-hidden', 'true');
     resultOverlay.classList.add('is-hidden');
     resultOverlay.setAttribute('aria-hidden', 'true');
     zukanOverlay.classList.add('is-hidden');
     zukanOverlay.setAttribute('aria-hidden', 'true');
+    skinOverlay.classList.add('is-hidden');
+    skinOverlay.setAttribute('aria-hidden', 'true');
 
     equationRowEl.classList.remove('is-hidden');
     choicesGridEl.classList.remove('is-hidden');
     sandboxControlsEl.classList.add('is-hidden');
 
-    levelBadgeEl.textContent = LEVEL_NAMES[currentLevel];
+    levelBadgeEl.textContent = `${COURSE_NAMES[currentStageObj.course]} ステージ${currentStageObj.stageNum}`;
     levelBadgeEl.style.display = 'inline-block';
     setupStageGeometry();
     loadQuestion(0);
@@ -710,8 +1067,10 @@
     clearBlocks();
 
     titleOverlay.classList.add('is-hidden');
+    titleOverlay.setAttribute('aria-hidden', 'true');
     resultOverlay.classList.add('is-hidden');
     zukanOverlay.classList.add('is-hidden');
+    skinOverlay.classList.add('is-hidden');
 
     equationRowEl.classList.add('is-hidden');
     choicesGridEl.classList.add('is-hidden');
@@ -719,14 +1078,13 @@
 
     levelBadgeEl.textContent = 'ひろば';
     questionProgressEl.textContent = 'じゆう あそび';
-    blackboardMessageEl.textContent = 'すきな つみきを ポンポン おとして つみあげてみよう！';
+    blackboardMessageEl.textContent = 'あつめた つみきを ポンポン おとして つみあげよう！';
     blackboardMessageEl.className = 'blackboard-message';
     choicesLabelEl.textContent = 'したの つみきを えらんで おしてね！';
 
     setupStageGeometry();
   }
 
-  // 広場でおもちゃ積み木を落とす
   function dropToyInSandbox(toy) {
     const size = 56;
     const dropX = stageWidth / 2 + (Math.random() - 0.5) * 80;
@@ -742,20 +1100,17 @@
     block.toyData = toy;
     block.customW = size;
     block.customH = size;
-    block.popScale = 0.8;
 
     Body.setVelocity(block, { x: (Math.random() - 0.5) * 1.5, y: 1.5 });
     World.add(world, block);
     sandboxBodies.push(block);
 
-    // 最大15個まで
     if (sandboxBodies.length > 15) {
       const old = sandboxBodies.shift();
       World.remove(world, old);
     }
   }
 
-  // 広場で数字ブロックを落とす
   function dropNumberInSandbox(num) {
     const { w, h } = getBlockDimensions(num);
     const dropX = stageWidth / 2 + (Math.random() - 0.5) * 80;
@@ -840,7 +1195,6 @@
     });
   }
 
-  // 4択ボタン選択
   function onChoiceSelected(pickedNum, btnElement) {
     if (isInputLocked || !currentQ || isSandboxMode) return;
     isInputLocked = true;
@@ -871,7 +1225,6 @@
     Body.setVelocity(fallingBlock, { x: 0, y: 2.2 });
   }
 
-  // 衝突検知
   function onCollisionStart(event) {
     if (isSandboxMode) return;
     if (hasTriggeredCollision || !fallingBlock || !baseBlock) return;
@@ -893,7 +1246,6 @@
     }
   }
 
-  // 物理演出
   function performOperation() {
     if (!baseBlock || !fallingBlock || !currentQ) return;
 
@@ -924,11 +1276,7 @@
       window.se.playMerge(calcResult);
 
       shockwaves.push({
-        x: midX,
-        y: midY,
-        r: 25,
-        maxR: 110,
-        alpha: 1.0,
+        x: midX, y: midY, r: 25, maxR: 110, alpha: 1.0,
         color: pickedVal === currentQ.answer ? '#2a9d8f' : '#e76f51'
       });
     } else if (op === 'sub') {
@@ -945,11 +1293,7 @@
       window.se.playSubtract();
 
       shockwaves.push({
-        x: midX,
-        y: midY,
-        r: 20,
-        maxR: 90,
-        alpha: 1.0,
+        x: midX, y: midY, r: 20, maxR: 90, alpha: 1.0,
         color: pickedVal === currentQ.answer ? '#2a9d8f' : '#a0c4ff'
       });
     } else if (op === 'mul') {
@@ -960,11 +1304,7 @@
       window.se.playMultiply();
 
       shockwaves.push({
-        x: midX,
-        y: midY,
-        r: 30,
-        maxR: 130,
-        alpha: 1.0,
+        x: midX, y: midY, r: 30, maxR: 130, alpha: 1.0,
         color: pickedVal === currentQ.answer ? '#2a9d8f' : '#ffd166'
       });
     } else if (op === 'div') {
@@ -981,24 +1321,19 @@
       window.se.playDivide();
 
       shockwaves.push({
-        x: midX,
-        y: midY,
-        r: 20,
-        maxR: 100,
-        alpha: 1.0,
+        x: midX, y: midY, r: 20, maxR: 100, alpha: 1.0,
         color: pickedVal === currentQ.answer ? '#2a9d8f' : '#ffc6ff'
       });
     }
 
     if (pickedVal === currentQ.answer) {
-      handleCorrectAnswer(pickedVal);
+      handleCorrectAnswer();
     } else {
-      handleWrongAnswer(pickedVal, calcResult);
+      handleWrongAnswer();
     }
   }
 
-  // 正解処理
-  function handleCorrectAnswer(pickedVal) {
+  function handleCorrectAnswer() {
     const blankEl = currentQ.pattern === 'blankMiddle' ? eqPartBEl : eqPartCEl;
     blankEl.className = 'eq-blank is-filled-correct';
 
@@ -1035,8 +1370,7 @@
     }, 1500);
   }
 
-  // 間違えたときの処理
-  function handleWrongAnswer(pickedVal, calcResult) {
+  function handleWrongAnswer() {
     const blankEl = currentQ.pattern === 'blankMiddle' ? eqPartBEl : eqPartCEl;
     blankEl.className = 'eq-blank is-filled-wrong';
 
@@ -1071,24 +1405,35 @@
     }, 1800);
   }
 
-  // 結果発表画面
+  // =========================================
+  // 結果発表画面（A:限定つみき・B:星3つ・C:きせかえ解放）
+  // =========================================
   function showResultScreen() {
     const correctCount = solvedHistory.filter((item) => item.isCorrect).length;
     const finalScore = Math.round((correctCount / totalQuestions) * 100);
 
-    saveData.totalClears++;
-    if (finalScore === 100) {
-      saveData.perfectClears++;
-      // メダル獲得記録
-      saveData.medals[`${currentCourse}_${currentLevel}`] = true;
-    }
-    saveGameData();
+    // 獲得した星（最後まで解けば最低★1、60点以上★2、100点★3）
+    let earnedStars = 1;
+    if (finalScore === 100) earnedStars = 3;
+    else if (finalScore >= 60) earnedStars = 2;
 
-    // 100点満点、または80点以上で新積み木獲得のチャンス！
-    let awardedToy = null;
-    if (finalScore === 100 || (finalScore >= 80 && Math.random() < 0.6)) {
-      awardedToy = awardNewToy();
+    const prevStars = saveData.stageStars[currentStageObj.id] || 0;
+    if (earnedStars > prevStars) {
+      saveData.stageStars[currentStageObj.id] = earnedStars;
     }
+
+    // ステージ固有おもちゃの解放（初クリア時）
+    const stageToy = currentStageObj.toy;
+    const isFirstToyGet = !saveData.unlockedToys.includes(stageToy.id);
+    if (isFirstToyGet) {
+      saveData.unlockedToys.push(stageToy.id);
+    }
+
+    saveData.totalClears++;
+
+    // スキン解放チェック
+    const newlyUnlockedSkins = checkAndUnlockSkins();
+    saveGameData();
 
     if (finalScore === 100) {
       window.se.playFanfare();
@@ -1096,30 +1441,62 @@
       window.se.playCheer();
     }
 
-    resultTitleEl.textContent = `${finalScore}てん！`;
+    // 星3つ表示
+    let resultStarsHtml = '';
+    for (let i = 1; i <= 3; i++) {
+      resultStarsHtml += generateStarSVG(i <= earnedStars, 'result-star-big');
+    }
+    resultStarsRowEl.innerHTML = resultStarsHtml;
 
+    resultTitleEl.textContent = finalScore === 100 ? '100てん まんてん！' : `${finalScore}てん！`;
+
+    const stLabel = `${COURSE_NAMES[currentStageObj.course]} ステージ${currentStageObj.stageNum}`;
     if (finalScore === 100) {
-      resultTitleEl.textContent = '100てん まんてん！';
-      resultSubtitleEl.textContent = `【${LEVEL_NAMES[currentLevel]}・${totalQuestions}もん】きんメダル かくとく！ たいへん よくできました！`;
+      resultSubtitleEl.textContent = `【${stLabel}】ほし3つ パーフェクト！ すごいね！`;
       renderStampSVG('hanamaru');
-    } else if (finalScore >= 80) {
-      resultSubtitleEl.textContent = `【${LEVEL_NAMES[currentLevel]}・${totalQuestions}もん】おしい！ あとすこしで まんてんだね！`;
+    } else if (finalScore >= 60) {
+      resultSubtitleEl.textContent = `【${stLabel}】ステージ クリア！ つぎは まんてんを めざそう！`;
       renderStampSVG('maru');
     } else {
-      resultSubtitleEl.textContent = `【${LEVEL_NAMES[currentLevel]}・${totalQuestions}もん】なんかいも あそんで つよくなろう！`;
+      resultSubtitleEl.textContent = `【${stLabel}】さいごまで がんばったね！`;
       renderStampSVG('fight');
     }
 
-    // 新積み木獲得バナー表示
-    if (awardedToy) {
-      rewardBannerEl.classList.remove('is-hidden');
-      rewardNameEl.textContent = `「${awardedToy.name}」の つみき`;
-      rewardIconBoxEl.innerHTML = generateToySVG(awardedToy, true);
+    // ステージクリア報酬バナー表示（毎回表示し、初回は強調）
+    rewardBannerEl.classList.remove('is-hidden');
+    rewardBannerBadgeEl.textContent = isFirstToyGet
+      ? 'ステージクリア ごほうび ゲット！'
+      : 'この ステージの ごほうび つみき';
+    rewardNameEl.textContent = `「${stageToy.name}」の つみき`;
+    rewardSubtextEl.textContent = isFirstToyGet
+      ? 'ずかんと つみきひろばに ついか されたよ！'
+      : 'つみきひろばで あそべるよ！';
+    rewardIconBoxEl.innerHTML = generateToySVG(stageToy, true);
+
+    if (isFirstToyGet || newlyUnlockedSkins.length > 0) {
       addTimer(() => {
         window.se.playGetToy();
-      }, 500);
+      }, 480);
+    }
+
+    // 新きせかえ解放バナー
+    if (newlyUnlockedSkins.length > 0) {
+      skinUnlockBannerEl.classList.remove('is-hidden');
+      skinUnlockNameEl.textContent = `「${newlyUnlockedSkins[0].name}」`;
     } else {
-      rewardBannerEl.classList.add('is-hidden');
+      skinUnlockBannerEl.classList.add('is-hidden');
+    }
+
+    // 「つぎのステージへすすむ」ボタン表示判定
+    const nextStageNum = currentStageObj.stageNum + 1;
+    const nextStageObj = STAGE_CATALOG.find(
+      (s) => s.course === currentStageObj.course && s.stageNum === nextStageNum
+    );
+    if (nextStageObj) {
+      btnNextStage.classList.remove('is-hidden');
+      btnNextStage.textContent = `つぎの ステージ ${nextStageNum} へ すすむ！`;
+    } else {
+      btnNextStage.classList.add('is-hidden');
     }
 
     reviewHeadingEl.textContent = `といた ${totalQuestions}もんの ふりかえり（${correctCount}もん せいかい）`;
@@ -1143,48 +1520,16 @@
     resultOverlay.setAttribute('aria-hidden', 'false');
   }
 
-  // 評価スタンプSVG
   function renderStampSVG(type) {
     if (type === 'hanamaru') {
       resultStampWrapEl.innerHTML = `
         <svg viewBox="0 0 160 160" class="result-stamp-svg">
           <path
-            d="M 80 12
-               Q 96 4, 104 20
-               Q 122 14, 124 32
-               Q 142 32, 138 50
-               Q 154 58, 144 74
-               Q 156 90, 140 102
-               Q 146 120, 128 124
-               Q 126 142, 108 138
-               Q 98 154, 80 144
-               Q 62 154, 52 138
-               Q 34 142, 32 124
-               Q 14 120, 20 102
-               Q 4 90, 16 74
-               Q 6 58, 22 50
-               Q 18 32, 36 32
-               Q 38 14, 56 20
-               Q 64 4, 80 12 Z"
-            fill="#fff5f5"
-            stroke="#e63946"
-            stroke-width="6"
-            stroke-linejoin="round"
+            d="M 80 12 Q 96 4, 104 20 Q 122 14, 124 32 Q 142 32, 138 50 Q 154 58, 144 74 Q 156 90, 140 102 Q 146 120, 128 124 Q 126 142, 108 138 Q 98 154, 80 144 Q 62 154, 52 138 Q 34 142, 32 124 Q 14 120, 20 102 Q 4 90, 16 74 Q 6 58, 22 50 Q 18 32, 36 32 Q 38 14, 56 20 Q 64 4, 80 12 Z"
+            fill="#fff5f5" stroke="#e63946" stroke-width="6" stroke-linejoin="round"
           />
           <circle cx="80" cy="80" r="46" fill="none" stroke="#e63946" stroke-width="6" />
-          <path
-            d="M 54 78
-               A 26 26 0 1 1 80 106
-               A 16 16 0 1 1 96 80
-               A 8 8 0 1 1 80 72"
-            fill="none"
-            stroke="#e63946"
-            stroke-width="6"
-            stroke-linecap="round"
-          />
-          <text x="80" y="88" text-anchor="middle" fill="#e63946" font-size="24" font-weight="800">
-            100てん
-          </text>
+          <text x="80" y="88" text-anchor="middle" fill="#e63946" font-size="24" font-weight="800">100てん</text>
         </svg>
       `;
     } else if (type === 'maru') {
@@ -1192,43 +1537,27 @@
         <svg viewBox="0 0 160 160" class="result-stamp-svg">
           <circle cx="80" cy="80" r="66" fill="#fff5f5" stroke="#e63946" stroke-width="8" />
           <circle cx="80" cy="80" r="48" fill="none" stroke="#e63946" stroke-width="5" />
-          <text x="80" y="88" text-anchor="middle" fill="#e63946" font-size="26" font-weight="800">
-            たいへんよく
-          </text>
+          <text x="80" y="88" text-anchor="middle" fill="#e63946" font-size="24" font-weight="800">クリア！</text>
         </svg>
       `;
     } else {
       resultStampWrapEl.innerHTML = `
         <svg viewBox="0 0 160 160" class="result-stamp-svg">
           <circle cx="80" cy="80" r="66" fill="#f0f7ff" stroke="#457b9d" stroke-width="8" />
-          <text x="80" y="76" text-anchor="middle" fill="#457b9d" font-size="24" font-weight="800">
-            ファイト！
-          </text>
-          <text x="80" y="104" text-anchor="middle" fill="#457b9d" font-size="18" font-weight="800">
-            もういっかい
-          </text>
+          <text x="80" y="76" text-anchor="middle" fill="#457b9d" font-size="24" font-weight="800">クリア！</text>
+          <text x="80" y="104" text-anchor="middle" fill="#457b9d" font-size="18" font-weight="800">ナイス</text>
         </svg>
       `;
     }
   }
 
-  // 紙吹雪
   function spawnConfetti(x, y, count) {
-    const palette = [
-      '#e63946',
-      '#f4a261',
-      '#ffcb77',
-      '#2a9d8f',
-      '#88d49e',
-      '#a0c4ff',
-      '#ffc6ff'
-    ];
+    const palette = ['#e63946', '#f4a261', '#ffcb77', '#2a9d8f', '#88d49e', '#a0c4ff', '#ffc6ff'];
     for (let i = 0; i < count; i++) {
       const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.4;
       const speed = 3 + Math.random() * 7;
       confettiList.push({
-        x,
-        y,
+        x, y,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed - 3.0,
         w: 10 + Math.random() * 6,
@@ -1242,7 +1571,6 @@
     }
   }
 
-  // 角丸長方形
   function roundRect(context, x, y, w, h, r) {
     const radius = Math.min(r, w / 2, h / 2);
     context.beginPath();
@@ -1254,7 +1582,6 @@
     context.closePath();
   }
 
-  // トレイ描画
   function drawWoodenTray() {
     ctx.save();
     for (const b of trayBodies) {
@@ -1282,7 +1609,6 @@
     ctx.restore();
   }
 
-  // おもちゃ積み木のCanvas描画
   function drawToyBlock(block) {
     if (!block || !block.toyData) return;
     const { x, y } = block.position;
@@ -1305,7 +1631,7 @@
     ctx.fill();
     ctx.stroke();
 
-    ctx.font = "800 14px 'M PLUS Rounded 1c', sans-serif";
+    ctx.font = "800 13px 'M PLUS Rounded 1c', sans-serif";
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = COLORS.navy;
@@ -1314,7 +1640,9 @@
     ctx.restore();
   }
 
-  // すうじ積み木描画
+  // =========================================
+  // 案C対応：きせかえスキン別 すうじ積み木描画
+  // =========================================
   function drawNumberBlock(block) {
     if (!block) return;
 
@@ -1326,29 +1654,103 @@
     const w = block.customW * block.popScale;
     const h = block.customH * block.popScale;
     const num = block.numberValue;
+    const skin = saveData.currentSkin || 'standard';
 
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(block.angle * 0.35);
 
+    // 立体影
     ctx.fillStyle = COLORS.navy;
     roundRect(ctx, -w / 2, -h / 2 + 5, w, h, 14);
     ctx.fill();
 
-    ctx.fillStyle = getBlockColor(num);
-    ctx.strokeStyle = COLORS.navy;
-    ctx.lineWidth = 3.5;
-    roundRect(ctx, -w / 2, -h / 2, w, h, 14);
-    ctx.fill();
-    ctx.stroke();
+    let textAndDotColor = COLORS.navy;
 
-    ctx.beginPath();
-    ctx.moveTo(-w / 2 + 14, -h / 2 + 6);
-    ctx.lineTo(w / 2 - 14, -h / 2 + 6);
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
-    ctx.lineWidth = 3;
-    ctx.lineCap = 'round';
-    ctx.stroke();
+    if (skin === 'gold') {
+      ctx.fillStyle = '#ffd700';
+      ctx.strokeStyle = COLORS.navy;
+      ctx.lineWidth = 3.5;
+      roundRect(ctx, -w / 2, -h / 2, w, h, 14);
+      ctx.fill();
+      ctx.stroke();
+
+      // 内枠のきらめきライン
+      ctx.strokeStyle = '#fff9db';
+      ctx.lineWidth = 2.5;
+      roundRect(ctx, -w / 2 + 5, -h / 2 + 5, w - 10, h - 10, 10);
+      ctx.stroke();
+      textAndDotColor = '#5c3c00';
+    } else if (skin === 'sweets') {
+      const sweetsPalette = ['#ffadad', '#ffd6a5', '#fdffb6', '#caffbf', '#ffc6ff'];
+      ctx.fillStyle = sweetsPalette[(num - 1) % sweetsPalette.length];
+      ctx.strokeStyle = '#5a2a27';
+      ctx.lineWidth = 3.5;
+      roundRect(ctx, -w / 2, -h / 2, w, h, 14);
+      ctx.fill();
+      ctx.stroke();
+
+      // 上部のホワイトチョコ飾り
+      ctx.save();
+      roundRect(ctx, -w / 2, -h / 2, w, h, 14);
+      ctx.clip();
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(-w / 2, -h / 2, w, 12);
+      ctx.restore();
+      ctx.strokeStyle = '#5a2a27';
+      ctx.lineWidth = 3.5;
+      roundRect(ctx, -w / 2, -h / 2, w, h, 14);
+      ctx.stroke();
+      textAndDotColor = '#5a2a27';
+    } else if (skin === 'night') {
+      ctx.fillStyle = '#1d3557';
+      ctx.strokeStyle = COLORS.navy;
+      ctx.lineWidth = 3.5;
+      roundRect(ctx, -w / 2, -h / 2, w, h, 14);
+      ctx.fill();
+      ctx.stroke();
+
+      // 夜空の小さな星ドット飾り
+      ctx.fillStyle = 'rgba(255, 224, 102, 0.5)';
+      ctx.beginPath();
+      ctx.arc(-w * 0.34, -h * 0.32, 2.5, 0, Math.PI * 2);
+      ctx.arc(w * 0.34, -h * 0.28, 2, 0, Math.PI * 2);
+      ctx.fill();
+      textAndDotColor = '#ffe066';
+    } else if (skin === 'rainbow') {
+      ctx.save();
+      roundRect(ctx, -w / 2, -h / 2, w, h, 14);
+      ctx.clip();
+      const stripes = ['#ffadad', '#ffd6a5', '#fdffb6', '#caffbf', '#a0c4ff'];
+      const sh = h / stripes.length;
+      stripes.forEach((sc, idx) => {
+        ctx.fillStyle = sc;
+        ctx.fillRect(-w / 2, -h / 2 + idx * sh, w, sh + 1);
+      });
+      ctx.restore();
+
+      ctx.strokeStyle = COLORS.navy;
+      ctx.lineWidth = 3.5;
+      roundRect(ctx, -w / 2, -h / 2, w, h, 14);
+      ctx.stroke();
+      textAndDotColor = COLORS.navy;
+    } else {
+      // standard
+      ctx.fillStyle = getBlockColor(num);
+      ctx.strokeStyle = COLORS.navy;
+      ctx.lineWidth = 3.5;
+      roundRect(ctx, -w / 2, -h / 2, w, h, 14);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(-w / 2 + 14, -h / 2 + 6);
+      ctx.lineTo(w / 2 - 14, -h / 2 + 6);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+    }
 
     const strNum = String(num);
     const fontScale = strNum.length >= 2 ? 0.38 : 0.44;
@@ -1356,20 +1758,19 @@
     ctx.font = `800 ${fontSize}px 'M PLUS Rounded 1c', sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = COLORS.navy;
+    ctx.fillStyle = textAndDotColor;
     ctx.fillText(strNum, 0, -h * 0.18);
 
     ctx.save();
     roundRect(ctx, -w / 2 + 4, -h / 2 + 4, w - 8, h - 8, 10);
     ctx.clip();
-    drawBlockDots(ctx, num, w, h);
+    drawBlockDots(ctx, num, w, h, textAndDotColor);
     ctx.restore();
 
     ctx.restore();
   }
 
-  // ドット描画
-  function drawBlockDots(context, num, w, h) {
+  function drawBlockDots(context, num, w, h, dotColor = COLORS.navy) {
     if (num <= 0) return;
 
     const maxCols = num <= 10 ? 5 : 10;
@@ -1389,7 +1790,7 @@
     const totalHeight = (rows - 1) * rowGap;
     const startY = centerY - totalHeight / 2;
 
-    context.fillStyle = COLORS.navy;
+    context.fillStyle = dotColor;
 
     let remaining = num;
     for (let r = 0; r < rows; r++) {
@@ -1408,7 +1809,6 @@
     }
   }
 
-  // はなまる描画
   function drawCanvasHanamaru() {
     if (!hanamaruStamp) return;
 
@@ -1462,7 +1862,6 @@
     ctx.restore();
   }
 
-  // エフェクト描画
   function drawAndUpdateEffects() {
     for (let i = shockwaves.length - 1; i >= 0; i--) {
       const sw = shockwaves[i];
@@ -1546,7 +1945,6 @@
     drawCanvasHanamaru();
   }
 
-  // メインループ
   let lastTime = performance.now();
   function gameLoop(now) {
     const delta = Math.min(24, now - lastTime);
@@ -1586,7 +1984,6 @@
       if (b) drawNumberBlock(b);
     });
 
-    // 広場モードの積み木描画
     sandboxBodies.forEach((b) => {
       if (b.label === 'toyBlock') {
         drawToyBlock(b);
@@ -1600,7 +1997,9 @@
     requestAnimationFrame(gameLoop);
   }
 
-  // イベントリスナー
+  // =========================================
+  // イベントリスナー登録
+  // =========================================
   choiceBtns.forEach((btn) => {
     btn.addEventListener('click', () => {
       const val = Number(btn.dataset.value);
@@ -1610,13 +2009,13 @@
     });
   });
 
-  diffTabs.forEach((tab) => {
+  courseTabs.forEach((tab) => {
     tab.addEventListener('click', () => {
       window.se.playButton();
-      diffTabs.forEach((t) => t.classList.remove('is-selected'));
+      courseTabs.forEach((t) => t.classList.remove('is-selected'));
       tab.classList.add('is-selected');
-      currentLevel = tab.dataset.level || 'easy';
-      updateCoursePreviews();
+      selectedCourseTab = tab.dataset.course || 'add';
+      renderStageList();
     });
   });
 
@@ -1626,14 +2025,6 @@
       countTabs.forEach((t) => t.classList.remove('is-selected'));
       tab.classList.add('is-selected');
       totalQuestions = Number(tab.dataset.count) || 5;
-    });
-  });
-
-  courseBtns.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      window.se.playButton();
-      const course = btn.dataset.course || 'add';
-      startCourse(course, currentLevel, totalQuestions);
     });
   });
 
@@ -1653,25 +2044,37 @@
     zukanOverlay.setAttribute('aria-hidden', 'true');
     titleOverlay.classList.remove('is-hidden');
     titleOverlay.setAttribute('aria-hidden', 'false');
-    updateCoursePreviews();
+    refreshAllTitleUI();
+  }
+
+  // きせかえモーダル開閉
+  function openSkin() {
+    window.se.playButton();
+    updateSkinUI();
+    titleOverlay.classList.add('is-hidden');
+    titleOverlay.setAttribute('aria-hidden', 'true');
+    skinOverlay.classList.remove('is-hidden');
+    skinOverlay.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeSkin() {
+    window.se.playButton();
+    skinOverlay.classList.add('is-hidden');
+    skinOverlay.setAttribute('aria-hidden', 'true');
+    titleOverlay.classList.remove('is-hidden');
+    titleOverlay.setAttribute('aria-hidden', 'false');
+    refreshAllTitleUI();
   }
 
   btnOpenZukan.addEventListener('click', openZukan);
   btnCloseZukan.addEventListener('click', closeZukan);
+  btnOpenSkin.addEventListener('click', openSkin);
+  btnCloseSkin.addEventListener('click', closeSkin);
 
-  // つみき広場
   btnOpenSandbox.addEventListener('click', () => {
     window.se.playButton();
     startSandboxMode();
   });
-
-  // グローバル公開（フォールバック用）
-  window.openZukan = openZukan;
-  window.closeZukan = closeZukan;
-  window.openSandbox = () => {
-    window.se.playButton();
-    startSandboxMode();
-  };
 
   btnSandboxClear.addEventListener('click', () => {
     window.se.playButton();
@@ -1689,15 +2092,25 @@
     titleOverlay.classList.remove('is-hidden');
     titleOverlay.setAttribute('aria-hidden', 'false');
     zukanOverlay.classList.add('is-hidden');
-    zukanOverlay.setAttribute('aria-hidden', 'true');
+    skinOverlay.classList.add('is-hidden');
     resultOverlay.classList.add('is-hidden');
-    resultOverlay.setAttribute('aria-hidden', 'true');
-    updateCoursePreviews();
+    refreshAllTitleUI();
+  });
+
+  btnNextStage.addEventListener('click', () => {
+    window.se.playButton();
+    const nextStageNum = currentStageObj.stageNum + 1;
+    const nextStageObj = STAGE_CATALOG.find(
+      (s) => s.course === currentStageObj.course && s.stageNum === nextStageNum
+    );
+    if (nextStageObj) {
+      startStage(nextStageObj, totalQuestions);
+    }
   });
 
   btnReplaySame.addEventListener('click', () => {
     window.se.playButton();
-    startCourse(currentCourse, currentLevel, totalQuestions);
+    startStage(currentStageObj, totalQuestions);
   });
 
   btnReplaySelect.addEventListener('click', () => {
@@ -1705,7 +2118,8 @@
     resultOverlay.classList.add('is-hidden');
     resultOverlay.setAttribute('aria-hidden', 'true');
     titleOverlay.classList.remove('is-hidden');
-    updateCoursePreviews();
+    titleOverlay.setAttribute('aria-hidden', 'false');
+    refreshAllTitleUI();
   });
 
   btnSound.addEventListener('click', () => {
@@ -1722,9 +2136,8 @@
   // 初期起動
   loadSaveData();
   initPhysics();
-  updateCoursePreviews();
-  updateZukanUI();
-  questions = generateQuestions('add', 'easy', totalQuestions);
+  refreshAllTitleUI();
+  questions = generateQuestionsForStage(STAGE_CATALOG[0], totalQuestions);
   loadQuestion(0);
   requestAnimationFrame(gameLoop);
 })();

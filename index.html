@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>すうじ つみき（さんすう あそび）</title>
+  <title>すうじ つみき（さんすう ステージ＆ごほうび）</title>
   <!-- Google Fonts: M PLUS Rounded 1c (700 / 800) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=2">
+  <link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
   <div id="app-wrapper">
@@ -19,7 +19,7 @@
           もどる
         </button>
         <div class="header-center-info">
-          <span id="level-badge" class="level-badge">かんたん</span>
+          <span id="level-badge" class="level-badge">ステージ 1</span>
           <span id="question-progress" class="question-progress">だい 1 もん / 5 もん</span>
         </div>
         <button id="btn-sound" class="bb-ctrl-btn" type="button" aria-pressed="true">
@@ -70,107 +70,78 @@
       </div>
     </footer>
 
-    <!-- タイトル・コース＆難易度＆問題数選択オーバーレイ画面 -->
+    <!-- タイトル・コース＆ステージ選択オーバーレイ画面 -->
     <section id="title-overlay" class="overlay-screen">
-      <div class="overlay-card">
+      <div class="overlay-card title-card">
         <div class="title-blackboard">
-          <p class="title-sub">たのしい さんすう つみき</p>
+          <div class="title-top-bar">
+            <span class="title-sub">たのしい さんすう つみき</span>
+            <div class="star-counter-pill" id="star-counter-pill">
+              <span class="star-icon-inline" id="title-star-svg"></span>
+              <span>あつめた ほし：<strong id="total-stars-count">0</strong> / 60</span>
+            </div>
+          </div>
           <h1 class="title-main">すうじ つみき</h1>
-          <p class="title-desc">もんだいを といて とくべつな つみきを あつめよう！</p>
+          <p class="title-desc">ステージを クリアして ごほうびの つみきと きせかえを あつめよう！</p>
         </div>
 
-        <!-- やりこみナビゲーションバー（図鑑・ひろば） -->
+        <!-- やりこみナビゲーションバー（図鑑・きせかえ・ひろば） -->
         <div class="extra-nav-row">
-          <button id="btn-open-zukan" class="extra-nav-btn zukan-btn" type="button" onclick="window.openZukan && window.openZukan()">
-            つみき ずかん（<span id="zukan-badge-count">0</span>/12）
+          <button id="btn-open-zukan" class="extra-nav-btn zukan-btn" type="button">
+            ずかん（<span id="zukan-badge-count">0</span>/20）
           </button>
-          <button id="btn-open-sandbox" class="extra-nav-btn sandbox-btn" type="button" onclick="window.openSandbox && window.openSandbox()">
+          <button id="btn-open-skin" class="extra-nav-btn skin-btn" type="button">
+            きせかえ（<span id="skin-badge-count">1</span>/5）
+          </button>
+          <button id="btn-open-sandbox" class="extra-nav-btn sandbox-btn" type="button">
             つみき ひろば
           </button>
         </div>
 
-        <!-- 難易度セレクター -->
-        <div class="setting-section">
-          <p class="section-heading">むずかしさを えらんでね</p>
-          <div class="setting-tabs" role="radiogroup" aria-label="むずかしさ">
-            <button class="diff-tab is-selected" type="button" data-level="easy">
-              かんたん
+        <!-- コース選択タブ ＆ 問題数セレクター -->
+        <div class="course-and-count-bar">
+          <div class="course-tabs" role="tablist" aria-label="けいさんコース">
+            <button class="course-tab is-selected" type="button" data-course="add">
+              たしざん
             </button>
-            <button class="diff-tab" type="button" data-level="normal">
-              ふつう
+            <button class="course-tab" type="button" data-course="sub">
+              ひきざん
             </button>
-            <button class="diff-tab" type="button" data-level="hard">
-              むずかしい
+            <button class="course-tab" type="button" data-course="mul">
+              かけざん
             </button>
+            <button class="course-tab" type="button" data-course="div">
+              わりざん
+            </button>
+          </div>
+
+          <div class="count-selector-row">
+            <span class="count-label">もんだいのかず：</span>
+            <div class="count-tabs-mini" role="radiogroup" aria-label="もんだいのかず">
+              <button class="count-tab" type="button" data-count="3">3もん</button>
+              <button class="count-tab is-selected" type="button" data-count="5">5もん</button>
+              <button class="count-tab" type="button" data-count="10">10もん</button>
+            </div>
           </div>
         </div>
 
-        <!-- もんだい数セレクター（3問・5問・10問） -->
-        <div class="setting-section">
-          <p class="section-heading">もんだいの かずを えらんでね</p>
-          <div class="setting-tabs" role="radiogroup" aria-label="もんだいのかず">
-            <button class="count-tab" type="button" data-count="3">
-              3もん
-            </button>
-            <button class="count-tab is-selected" type="button" data-count="5">
-              5もん
-            </button>
-            <button class="count-tab" type="button" data-count="10">
-              10もん
-            </button>
-          </div>
-        </div>
-
-        <!-- 4大コース選択グリッド（獲得メダルバッジ付き） -->
-        <div class="courses-section">
-          <p class="section-heading">あそぶ もんだいを えらんでね</p>
-          <div class="course-grid">
-            <button class="course-btn course-btn-add" type="button" data-course="add">
-              <div class="course-header-row">
-                <span class="course-name">たしざん</span>
-                <span id="badge-add" class="course-medal-badge"></span>
-              </div>
-              <span id="preview-add" class="course-example">4 ＋ [ ？ ] ＝ 10</span>
-            </button>
-
-            <button class="course-btn course-btn-sub" type="button" data-course="sub">
-              <div class="course-header-row">
-                <span class="course-name">ひきざん</span>
-                <span id="badge-sub" class="course-medal-badge"></span>
-              </div>
-              <span id="preview-sub" class="course-example">8 － [ ？ ] ＝ 5</span>
-            </button>
-
-            <button class="course-btn course-btn-mul" type="button" data-course="mul">
-              <div class="course-header-row">
-                <span class="course-name">かけざん</span>
-                <span id="badge-mul" class="course-medal-badge"></span>
-              </div>
-              <span id="preview-mul" class="course-example">2 × [ ？ ] ＝ 8</span>
-            </button>
-
-            <button class="course-btn course-btn-div" type="button" data-course="div">
-              <div class="course-header-row">
-                <span class="course-name">わりざん</span>
-                <span id="badge-div" class="course-medal-badge"></span>
-              </div>
-              <span id="preview-div" class="course-example">6 ÷ [ ？ ] ＝ 3</span>
-            </button>
-          </div>
+        <!-- ステージ一覧リスト（1〜5） -->
+        <div class="stage-list-container" id="stage-list-container">
+          <!-- JSで5つのステージカードが生成される -->
         </div>
       </div>
     </section>
 
-    <!-- やりこみ要素：つみき ずかん（コレクション棚）モーダル -->
+    <!-- やりこみ要素A：つみき ずかん（全20種コレクション）モーダル -->
     <section id="zukan-overlay" class="overlay-screen is-hidden" aria-hidden="true">
       <div class="overlay-card zukan-card">
         <div class="zukan-header">
           <h2 class="zukan-title">つみき ずかん</h2>
-          <p class="zukan-subtitle">あつめた つみき：<span id="zukan-total-collected">0</span> / 12こ</p>
+          <p class="zukan-subtitle">ステージを クリアして あつめた とくべつな つみき（<span id="zukan-total-collected">0</span> / 20こ）</p>
         </div>
 
         <div class="zukan-grid" id="zukan-grid">
-          <!-- 12種類の積み木カードがJSで生成される -->
+          <!-- 20種類の積み木カードがJSで生成される -->
         </div>
 
         <div class="zukan-actions">
@@ -181,25 +152,55 @@
       </div>
     </section>
 
-    <!-- 結果発表オーバーレイ画面（新積み木獲得演出つき） -->
+    <!-- やりこみ要素C：きせかえ（数字積み木スキン変更）モーダル -->
+    <section id="skin-overlay" class="overlay-screen is-hidden" aria-hidden="true">
+      <div class="overlay-card skin-card">
+        <div class="zukan-header">
+          <h2 class="zukan-title">つみき きせかえ</h2>
+          <p class="zukan-subtitle">ほしを あつめて すうじつみきの いろや もようを かえよう！</p>
+        </div>
+
+        <div class="skin-list" id="skin-list">
+          <!-- 5種類のきせかえカードがJSで生成される -->
+        </div>
+
+        <div class="zukan-actions">
+          <button id="btn-close-skin" class="action-btn action-btn-primary" type="button">
+            もどる
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 結果発表オーバーレイ画面（星評価・新積み木・新きせかえ獲得演出つき） -->
     <section id="result-overlay" class="overlay-screen is-hidden" aria-hidden="true">
       <div class="overlay-card result-card">
         <div class="result-header">
           <div id="result-stamp-wrap" class="result-stamp-wrap" aria-hidden="true"></div>
 
           <div class="result-title-box">
+            <div id="result-stars-row" class="result-stars-row"></div>
             <h2 id="result-title" class="result-title">100てん まんてん！</h2>
             <p id="result-subtitle" class="result-subtitle">ぜんぶ せいかい できたね！</p>
           </div>
         </div>
 
-        <!-- 新しい積み木をゲットしたときのポップアップ演出 -->
+        <!-- ステージクリア報酬（限定積み木）バナー -->
         <div id="reward-banner" class="reward-banner is-hidden">
-          <span class="reward-label">あたらしい つみきを ゲット！</span>
+          <span id="reward-banner-badge" class="reward-label">あたらしい ごほうび つみきを ゲット！</span>
           <div class="reward-content">
             <div id="reward-icon-box" class="reward-icon-box"></div>
-            <span id="reward-name" class="reward-name">「いぬ」の つみき</span>
+            <div class="reward-text-group">
+              <span id="reward-name" class="reward-name">「ひよこ」の つみき</span>
+              <span id="reward-subtext" class="reward-subtext">ずかんと ひろばに ついか されたよ！</span>
+            </div>
           </div>
+        </div>
+
+        <!-- きせかえスキン解放バナー -->
+        <div id="skin-unlock-banner" class="skin-unlock-banner is-hidden">
+          <span class="skin-unlock-label">あたらしい きせかえが ひらいたよ！</span>
+          <span id="skin-unlock-name" class="skin-unlock-name">「きんぴか ゴールド」</span>
         </div>
 
         <div class="review-box">
@@ -208,11 +209,14 @@
         </div>
 
         <div class="result-actions">
+          <button id="btn-next-stage" class="action-btn action-btn-next is-hidden" type="button">
+            つぎの ステージへ すすむ
+          </button>
           <button id="btn-replay-same" class="action-btn action-btn-primary" type="button">
             もういちど あそぶ
           </button>
           <button id="btn-replay-select" class="action-btn action-btn-secondary" type="button">
-            ほかに ちょうせん する
+            ステージを えらぶ
           </button>
         </div>
       </div>
@@ -221,7 +225,7 @@
 
   <!-- 2D物理エンジン Matter.js (CDN) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
-  <script src="se.js?v=2"></script>
-  <script src="main.js?v=2"></script>
+  <script src="se.js?v=3"></script>
+  <script src="main.js?v=3"></script>
 </body>
 </html>
