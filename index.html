@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
   <div id="app-wrapper">
@@ -81,10 +81,10 @@
 
         <!-- やりこみナビゲーションバー（図鑑・ひろば） -->
         <div class="extra-nav-row">
-          <button id="btn-open-zukan" class="extra-nav-btn zukan-btn" type="button">
+          <button id="btn-open-zukan" class="extra-nav-btn zukan-btn" type="button" onclick="window.openZukan && window.openZukan()">
             つみき ずかん（<span id="zukan-badge-count">0</span>/12）
           </button>
-          <button id="btn-open-sandbox" class="extra-nav-btn sandbox-btn" type="button">
+          <button id="btn-open-sandbox" class="extra-nav-btn sandbox-btn" type="button" onclick="window.openSandbox && window.openSandbox()">
             つみき ひろば
           </button>
         </div>
@@ -221,7 +221,7 @@
 
   <!-- 2D物理エンジン Matter.js (CDN) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
-  <script src="se.js"></script>
-  <script src="main.js"></script>
+  <script src="se.js?v=2"></script>
+  <script src="main.js?v=2"></script>
 </body>
 </html>

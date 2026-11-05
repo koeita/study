@@ -446,12 +446,18 @@ body {
   color: #2c3e50;
   border: 3px solid #2c3e50;
   border-radius: 12px;
-  padding: 8px 10px;
+  padding: 10px 8px;
   cursor: pointer;
   box-shadow: 0 4px 0 #2c3e50;
   transition: transform 0.06s ease, box-shadow 0.06s ease;
   touch-action: manipulation;
   text-align: center;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.extra-nav-btn * {
+  pointer-events: none;
 }
 
 .extra-nav-btn:active {
@@ -621,6 +627,10 @@ body {
 /* =========================================
    やりこみ：つみき図鑑モーダル
    ========================================= */
+#zukan-overlay {
+  z-index: 100;
+}
+
 .zukan-card {
   max-width: 520px;
 }

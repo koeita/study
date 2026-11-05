@@ -120,10 +120,18 @@
       const json = localStorage.getItem(SAVE_KEY);
       if (json) {
         const loaded = JSON.parse(json);
-        saveData = { ...saveData, ...loaded };
+        if (loaded && typeof loaded === 'object') {
+          saveData = { ...saveData, ...loaded };
+        }
       }
     } catch (e) {
       console.warn('saveData load failed', e);
+    }
+    if (!Array.isArray(saveData.unlockedToys) || saveData.unlockedToys.length === 0) {
+      saveData.unlockedToys = ['dog'];
+    }
+    if (!saveData.medals || typeof saveData.medals !== 'object') {
+      saveData.medals = {};
     }
   }
 
@@ -1630,24 +1638,40 @@
   });
 
   // 図鑑モーダル開閉
-  btnOpenZukan.addEventListener('click', () => {
+  function openZukan() {
     window.se.playButton();
     updateZukanUI();
+    titleOverlay.classList.add('is-hidden');
+    titleOverlay.setAttribute('aria-hidden', 'true');
     zukanOverlay.classList.remove('is-hidden');
     zukanOverlay.setAttribute('aria-hidden', 'false');
-  });
+  }
 
-  btnCloseZukan.addEventListener('click', () => {
+  function closeZukan() {
     window.se.playButton();
     zukanOverlay.classList.add('is-hidden');
     zukanOverlay.setAttribute('aria-hidden', 'true');
-  });
+    titleOverlay.classList.remove('is-hidden');
+    titleOverlay.setAttribute('aria-hidden', 'false');
+    updateCoursePreviews();
+  }
+
+  btnOpenZukan.addEventListener('click', openZukan);
+  btnCloseZukan.addEventListener('click', closeZukan);
 
   // つみき広場
   btnOpenSandbox.addEventListener('click', () => {
     window.se.playButton();
     startSandboxMode();
   });
+
+  // グローバル公開（フォールバック用）
+  window.openZukan = openZukan;
+  window.closeZukan = closeZukan;
+  window.openSandbox = () => {
+    window.se.playButton();
+    startSandboxMode();
+  };
 
   btnSandboxClear.addEventListener('click', () => {
     window.se.playButton();
@@ -1659,7 +1683,15 @@
     clearAllTimers();
     clearBlocks();
     isSandboxMode = false;
+    equationRowEl.classList.remove('is-hidden');
+    choicesGridEl.classList.remove('is-hidden');
+    sandboxControlsEl.classList.add('is-hidden');
     titleOverlay.classList.remove('is-hidden');
+    titleOverlay.setAttribute('aria-hidden', 'false');
+    zukanOverlay.classList.add('is-hidden');
+    zukanOverlay.setAttribute('aria-hidden', 'true');
+    resultOverlay.classList.add('is-hidden');
+    resultOverlay.setAttribute('aria-hidden', 'true');
     updateCoursePreviews();
   });
 
