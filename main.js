@@ -121,9 +121,9 @@
   // 積み木のサイズ
   function getBlockDimensions(num) {
     const scale = Math.min(1.05, Math.max(0.78, Math.min(stageWidth / 640, stageHeight / 300)));
-    const clamped = Math.max(1, Math.min(30, num));
-    const w = Math.round((72 + clamped * 3.4) * scale);
-    const h = Math.round((62 + clamped * 2.2) * scale);
+    const clamped = Math.max(1, Math.min(32, num));
+    const w = Math.round((76 + clamped * 3.2) * scale);
+    const h = Math.round((66 + clamped * 2.2) * scale);
     return { w, h };
   }
 
@@ -132,17 +132,17 @@
     if (currentLevel === 'easy') {
       previewAdd.textContent = '4 ＋ [ ？ ] ＝ 10';
       previewSub.textContent = '8 － [ ？ ] ＝ 5';
-      previewMul.textContent = '2 × [ ？ ] ＝ 8'; // 2の段まで
+      previewMul.textContent = '2 × [ ？ ] ＝ 8';
       previewDiv.textContent = '6 ÷ [ ？ ] ＝ 3';
     } else if (currentLevel === 'normal') {
       previewAdd.textContent = '7 ＋ [ ？ ] ＝ 13';
       previewSub.textContent = '13 － [ ？ ] ＝ 8';
-      previewMul.textContent = '4 × [ ？ ] ＝ 12'; // 4の段まで
+      previewMul.textContent = '4 × [ ？ ] ＝ 12';
       previewDiv.textContent = '15 ÷ [ ？ ] ＝ 5';
     } else {
       previewAdd.textContent = '14 ＋ [ ？ ] ＝ 21';
       previewSub.textContent = '18 － [ ？ ] ＝ 9';
-      previewMul.textContent = '7 × [ ？ ] ＝ 56'; // 1〜9の段
+      previewMul.textContent = '7 × [ ？ ] ＝ 56';
       previewDiv.textContent = '24 ÷ [ ？ ] ＝ 6';
     }
   }
@@ -210,27 +210,25 @@
         }
       }
     } else if (course === 'mul') {
-      // 掛け算：簡単＝2の段まで、普通＝4の段まで、むずかしい＝1〜9の段
       if (level === 'easy') {
-        // 【かんたん】2のだんまで（1の段・2の段）
+        // 2の段まで
         [1, 2].forEach((a) => {
           for (let b = 1; b <= 9; b++) {
             pool.push({ type: 'mul', op: '×', first: a, second: b, result: a * b });
           }
         });
       } else if (level === 'normal') {
-        // 【ふつう】4のだんまで（1〜4の段、特に3・4の段を中心に出題）
+        // 4の段まで
         [1, 2, 3, 4].forEach((a) => {
           for (let b = 1; b <= 9; b++) {
             pool.push({ type: 'mul', op: '×', first: a, second: b, result: a * b });
-            // 3・4の段の出題頻度を高めるために追加
             if (a >= 3) {
               pool.push({ type: 'mul', op: '×', first: a, second: b, result: a * b });
             }
           }
         });
       } else {
-        // 【むずかしい】1〜9のだん（九九ぜんぶ：1〜9の段）
+        // 1〜9の段
         for (let a = 1; a <= 9; a++) {
           for (let b = 1; b <= 9; b++) {
             pool.push({ type: 'mul', op: '×', first: a, second: b, result: a * b });
@@ -861,7 +859,7 @@
     ctx.restore();
   }
 
-  // 積み木描画
+  // すうじ積み木描画（ドットの飛び出しを防止するクリッピング＆自動スケーリング）
   function drawNumberBlock(block) {
     if (!block) return;
 
@@ -878,10 +876,12 @@
     ctx.translate(x, y);
     ctx.rotate(block.angle * 0.35);
 
+    // 1. 立体影
     ctx.fillStyle = COLORS.navy;
     roundRect(ctx, -w / 2, -h / 2 + 5, w, h, 14);
     ctx.fill();
 
+    // 2. 積み木本体
     ctx.fillStyle = getBlockColor(num);
     ctx.strokeStyle = COLORS.navy;
     ctx.lineWidth = 3.5;
@@ -889,6 +889,7 @@
     ctx.fill();
     ctx.stroke();
 
+    // 3. 上部のハイライトライン
     ctx.beginPath();
     ctx.moveTo(-w / 2 + 14, -h / 2 + 6);
     ctx.lineTo(w / 2 - 14, -h / 2 + 6);
@@ -897,27 +898,49 @@
     ctx.lineCap = 'round';
     ctx.stroke();
 
-    const fontSize = Math.round(Math.min(w, h) * 0.44);
+    // 4. 数字テキスト（2桁のときはフォントサイズをやや控えめにして上下バランスを確保）
+    const strNum = String(num);
+    const fontScale = strNum.length >= 2 ? 0.38 : 0.44;
+    const fontSize = Math.round(Math.min(w, h) * fontScale);
     ctx.font = `800 ${fontSize}px 'M PLUS Rounded 1c', sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = COLORS.navy;
-    ctx.fillText(String(num), 0, -h * 0.16);
+    ctx.fillText(strNum, 0, -h * 0.18);
 
+    // 5. 積み木内部のみに描画制限（クリッピング）をかけ、絶対に枠外へドットが飛び出ないようにする
+    ctx.save();
+    roundRect(ctx, -w / 2 + 4, -h / 2 + 4, w - 8, h - 8, 10);
+    ctx.clip();
     drawBlockDots(ctx, num, w, h);
+    ctx.restore();
 
     ctx.restore();
   }
 
-  // ドット描画
+  // 積み木内の●ドット描画（数字の大きさに合わせて行数・列数・サイズを最適化）
   function drawBlockDots(context, num, w, h) {
     if (num <= 0) return;
-    const maxCols = 5;
+
+    // 10以下は5列（1年生の5のまとまり）、11以上は10列（10進数のまとまり）
+    const maxCols = num <= 10 ? 5 : 10;
     const rows = Math.ceil(num / maxCols);
-    const dotRadius = Math.max(2.6, Math.min(4.8, Math.min(w, h) * 0.052));
-    const colGap = dotRadius * 2.7;
-    const rowGap = dotRadius * 2.4;
-    const startY = h * 0.15 - ((rows - 1) * rowGap) * 0.25;
+
+    // 数字の下の描画可能エリア（下半分）
+    const availW = w * 0.82;
+    const availH = h * 0.38;
+    const centerY = h * 0.23;
+
+    // 枠内に完全に収まるようドット半径を動的に計算
+    const maxDotRByW = availW / (maxCols * 2.5);
+    const maxDotRByH = availH / (rows * 2.4);
+    const dotRadius = Math.max(1.8, Math.min(4.5, Math.min(maxDotRByW, maxDotRByH)));
+
+    const colGap = dotRadius * 2.5;
+    const rowGap = dotRadius * 2.3;
+
+    const totalHeight = (rows - 1) * rowGap;
+    const startY = centerY - totalHeight / 2;
 
     let remaining = num;
     for (let r = 0; r < rows; r++) {
@@ -931,7 +954,9 @@
         const dotIndex = r * maxCols + c;
         context.beginPath();
         context.arc(x, y, dotRadius, 0, Math.PI * 2);
-        context.fillStyle = dotIndex >= 10 ? COLORS.hanamaruRed : COLORS.navy;
+        // 10個ごとに色を交互に（10個のまとまりが直感的にわかる）
+        const isTenGroup = Math.floor(dotIndex / 10) % 2 === 1;
+        context.fillStyle = isTenGroup ? COLORS.hanamaruRed : COLORS.navy;
         context.fill();
       }
       remaining -= countInRow;
