@@ -1,4 +1,4 @@
-// すうじ つみき（たしざん・ひきざん・かけざん・わりざん 難易度＆バリエーション対応） メインスクリプト
+// すうじ つみき（たしざん・ひきざん・かけざん・わりざん 難易度＆問題数選択対応） メインスクリプト
 (() => {
   const { Engine, World, Bodies, Body, Events } = Matter;
 
@@ -25,11 +25,13 @@
   const resultStampWrapEl = document.getElementById('result-stamp-wrap');
   const resultTitleEl = document.getElementById('result-title');
   const resultSubtitleEl = document.getElementById('result-subtitle');
+  const reviewHeadingEl = document.getElementById('review-heading');
   const reviewListEl = document.getElementById('review-list');
   const btnReplaySame = document.getElementById('btn-replay-same');
   const btnReplaySelect = document.getElementById('btn-replay-select');
   const courseBtns = Array.from(document.querySelectorAll('.course-btn'));
   const diffTabs = Array.from(document.querySelectorAll('.diff-tab'));
+  const countTabs = Array.from(document.querySelectorAll('.count-tab'));
 
   const previewAdd = document.getElementById('preview-add');
   const previewSub = document.getElementById('preview-sub');
@@ -67,13 +69,13 @@
   };
 
   // ゲーム進行状態
-  const TOTAL_QUESTIONS = 5;
+  let totalQuestions = 5; // 3 | 5 | 10
   let currentLevel = 'easy'; // 'easy' | 'normal' | 'hard'
   let currentCourse = 'add'; // 'add' | 'sub' | 'mul' | 'div'
   let questionIndex = 0;
   let questions = [];
   let currentQ = null;
-  let solvedHistory = []; // { text, isCorrect, correctAns, userPick }
+  let solvedHistory = [];
   let isInputLocked = false;
 
   // ステージ寸法
@@ -149,8 +151,8 @@
     }
   }
 
-  // 難易度・コースに応じた問題プール生成
-  function generateQuestions(course, level) {
+  // 難易度・コース・問題数に応じた問題プール生成
+  function generateQuestions(course, level, count) {
     const pool = [];
 
     const shuffle = (arr) => {
@@ -257,10 +259,11 @@
     }
 
     shuffle(pool);
-    const selected = pool.slice(0, TOTAL_QUESTIONS);
+    const selected = pool.slice(0, count);
 
     return selected.map((q, idx) => {
-      const isBlankResult = idx === 1 || idx === 3;
+      // 偶数インデックス（0問目、2問目など）は穴埋め、奇数は答えあて
+      const isBlankResult = idx % 2 === 1;
       const pattern = isBlankResult ? 'blankResult' : 'blankMiddle';
       const answer = isBlankResult ? q.result : q.second;
 
@@ -437,13 +440,14 @@
   }
 
   // コース開始
-  function startCourse(course, level) {
+  function startCourse(course, level, count) {
     clearAllTimers();
     currentCourse = course;
     currentLevel = level || currentLevel;
+    totalQuestions = count || totalQuestions;
     questionIndex = 0;
     solvedHistory = [];
-    questions = generateQuestions(currentCourse, currentLevel);
+    questions = generateQuestions(currentCourse, currentLevel, totalQuestions);
 
     titleOverlay.classList.add('is-hidden');
     resultOverlay.classList.add('is-hidden');
@@ -462,7 +466,7 @@
     isInputLocked = false;
     hanamaruStamp = null;
 
-    questionProgressEl.textContent = `だい ${idx + 1} もん / ${TOTAL_QUESTIONS} もん`;
+    questionProgressEl.textContent = `だい ${idx + 1} もん / ${totalQuestions} もん`;
     eqOpEl.textContent = currentQ.op;
 
     if (currentQ.pattern === 'blankMiddle') {
@@ -696,9 +700,8 @@
       };
     }, 180);
 
-    // 1.5秒後に自動で次の問題へ
     addTimer(() => {
-      if (questionIndex + 1 < TOTAL_QUESTIONS) {
+      if (questionIndex + 1 < totalQuestions) {
         loadQuestion(questionIndex + 1);
       } else {
         showResultScreen();
@@ -706,7 +709,7 @@
     }, 1500);
   }
 
-  // 間違えたときの処理（正解を表示し、自動で次の問題へ進む仕様に変更）
+  // 間違えたときの処理
   function handleWrongAnswer(pickedVal, calcResult) {
     const blankEl = currentQ.pattern === 'blankMiddle' ? eqPartBEl : eqPartCEl;
     blankEl.className = 'eq-blank is-filled-wrong';
@@ -733,9 +736,8 @@
       life: 1.0
     });
 
-    // 1.8秒後に正解を確認したあと、次の問題へ自動で進む
     addTimer(() => {
-      if (questionIndex + 1 < TOTAL_QUESTIONS) {
+      if (questionIndex + 1 < totalQuestions) {
         loadQuestion(questionIndex + 1);
       } else {
         showResultScreen();
@@ -743,37 +745,35 @@
     }, 1800);
   }
 
-  // 結果発表画面（正解数に応じた点数評価：20点×正解数）
+  // 結果発表画面
   function showResultScreen() {
     const correctCount = solvedHistory.filter((item) => item.isCorrect).length;
-    const finalScore = correctCount * 20;
+    const finalScore = Math.round((correctCount / totalQuestions) * 100);
 
-    // 音の再生
     if (finalScore === 100) {
       window.se.playFanfare();
     } else {
       window.se.playCheer();
     }
 
-    // 点数に応じたタイトル・サブタイトル・スタンプの切り替え
     resultTitleEl.textContent = `${finalScore}てん！`;
 
     if (finalScore === 100) {
       resultTitleEl.textContent = '100てん まんてん！';
-      resultSubtitleEl.textContent = `【${LEVEL_NAMES[currentLevel]}】ぜんぶ せいかい！ たいへん よくできました！`;
+      resultSubtitleEl.textContent = `【${LEVEL_NAMES[currentLevel]}・${totalQuestions}もん】ぜんぶ せいかい！ たいへん よくできました！`;
       renderStampSVG('hanamaru');
     } else if (finalScore >= 80) {
-      resultSubtitleEl.textContent = `【${LEVEL_NAMES[currentLevel]}】おしい！ あとすこしで まんてんだね！`;
+      resultSubtitleEl.textContent = `【${LEVEL_NAMES[currentLevel]}・${totalQuestions}もん】おしい！ あとすこしで まんてんだね！`;
       renderStampSVG('maru');
     } else if (finalScore >= 60) {
-      resultSubtitleEl.textContent = `【${LEVEL_NAMES[currentLevel]}】よく がんばったね！ つぎは もっと いけるよ！`;
+      resultSubtitleEl.textContent = `【${LEVEL_NAMES[currentLevel]}・${totalQuestions}もん】よく がんばったね！ つぎは もっと いけるよ！`;
       renderStampSVG('fight');
     } else {
-      resultSubtitleEl.textContent = `【${LEVEL_NAMES[currentLevel]}】なんかいも あそんで つよくなろう！`;
+      resultSubtitleEl.textContent = `【${LEVEL_NAMES[currentLevel]}・${totalQuestions}もん】なんかいも あそんで つよくなろう！`;
       renderStampSVG('fight');
     }
 
-    // ふりかえり一覧（丸・バツを色分け）
+    reviewHeadingEl.textContent = `といた ${totalQuestions}もんの ふりかえり（${correctCount}もん せいかい）`;
     reviewListEl.innerHTML = '';
     solvedHistory.forEach((item, idx) => {
       const li = document.createElement('li');
@@ -794,7 +794,7 @@
     resultOverlay.setAttribute('aria-hidden', 'false');
   }
 
-  // 評価スタンプSVGの描画（花丸 / 丸 / ファイト）
+  // 評価スタンプSVG
   function renderStampSVG(type) {
     if (type === 'hanamaru') {
       resultStampWrapEl.innerHTML = `
@@ -978,7 +978,6 @@
     ctx.fillStyle = COLORS.navy;
     ctx.fillText(strNum, 0, -h * 0.18);
 
-    // 積み木内部のクリッピング＆ドット描画
     ctx.save();
     roundRect(ctx, -w / 2 + 4, -h / 2 + 4, w - 8, h - 8, 10);
     ctx.clip();
@@ -988,7 +987,7 @@
     ctx.restore();
   }
 
-  // 積み木内の●ドット描画（単色ネイビーで統一）
+  // ドット描画
   function drawBlockDots(context, num, w, h) {
     if (num <= 0) return;
 
@@ -1009,7 +1008,6 @@
     const totalHeight = (rows - 1) * rowGap;
     const startY = centerY - totalHeight / 2;
 
-    // すべてダークネイビー一色で統一
     context.fillStyle = COLORS.navy;
 
     let remaining = num;
@@ -1232,11 +1230,20 @@
     });
   });
 
+  countTabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      window.se.playButton();
+      countTabs.forEach((t) => t.classList.remove('is-selected'));
+      tab.classList.add('is-selected');
+      totalQuestions = Number(tab.dataset.count) || 5;
+    });
+  });
+
   courseBtns.forEach((btn) => {
     btn.addEventListener('click', () => {
       window.se.playButton();
       const course = btn.dataset.course || 'add';
-      startCourse(course, currentLevel);
+      startCourse(course, currentLevel, totalQuestions);
     });
   });
 
@@ -1248,7 +1255,7 @@
 
   btnReplaySame.addEventListener('click', () => {
     window.se.playButton();
-    startCourse(currentCourse, currentLevel);
+    startCourse(currentCourse, currentLevel, totalQuestions);
   });
 
   btnReplaySelect.addEventListener('click', () => {
@@ -1272,7 +1279,7 @@
   // 初期起動
   initPhysics();
   updateCoursePreviews();
-  questions = generateQuestions('add', 'easy');
+  questions = generateQuestions('add', 'easy', totalQuestions);
   loadQuestion(0);
   requestAnimationFrame(gameLoop);
 })();

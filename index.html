@@ -60,7 +60,7 @@
       </div>
     </footer>
 
-    <!-- タイトル・コース＆難易度選択オーバーレイ画面 -->
+    <!-- タイトル・コース＆難易度＆問題数選択オーバーレイ画面 -->
     <section id="title-overlay" class="overlay-screen">
       <div class="overlay-card">
         <div class="title-blackboard">
@@ -70,9 +70,9 @@
         </div>
 
         <!-- 難易度セレクター -->
-        <div class="difficulty-section">
+        <div class="setting-section">
           <p class="section-heading">むずかしさを えらんでね</p>
-          <div class="difficulty-tabs" role="radiogroup" aria-label="むずかしさ">
+          <div class="setting-tabs" role="radiogroup" aria-label="むずかしさ">
             <button class="diff-tab is-selected" type="button" data-level="easy">
               かんたん
             </button>
@@ -81,6 +81,22 @@
             </button>
             <button class="diff-tab" type="button" data-level="hard">
               むずかしい
+            </button>
+          </div>
+        </div>
+
+        <!-- もんだい数セレクター（3問・5問・10問） -->
+        <div class="setting-section">
+          <p class="section-heading">もんだいの かずを えらんでね</p>
+          <div class="setting-tabs" role="radiogroup" aria-label="もんだいのかず">
+            <button class="count-tab" type="button" data-count="3">
+              3もん
+            </button>
+            <button class="count-tab is-selected" type="button" data-count="5">
+              5もん
+            </button>
+            <button class="count-tab" type="button" data-count="10">
+              10もん
             </button>
           </div>
         </div>
@@ -113,21 +129,20 @@
       </div>
     </section>
 
-    <!-- 5問終了（けっか はっぴょう）オーバーレイ画面 -->
+    <!-- 結果発表オーバーレイ画面 -->
     <section id="result-overlay" class="overlay-screen is-hidden" aria-hidden="true">
       <div class="overlay-card result-card">
         <div class="result-header">
-          <!-- 評価スタンプ（点数に応じて切り替え） -->
           <div id="result-stamp-wrap" class="result-stamp-wrap" aria-hidden="true"></div>
 
           <div class="result-title-box">
             <h2 id="result-title" class="result-title">100てん まんてん！</h2>
-            <p id="result-subtitle" class="result-subtitle">5もん ぜんぶ せいかい できたね！</p>
+            <p id="result-subtitle" class="result-subtitle">ぜんぶ せいかい できたね！</p>
           </div>
         </div>
 
         <div class="review-box">
-          <div class="review-heading">といた 5もんの ふりかえり</div>
+          <div id="review-heading" class="review-heading">といた もんだいの ふりかえり</div>
           <ul id="review-list" class="review-list"></ul>
         </div>
 
