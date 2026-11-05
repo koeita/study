@@ -70,7 +70,7 @@
   let currentCourse = 'add'; // 'add' | 'sub' | 'mul' | 'div'
   let questionIndex = 0;
   let questions = [];
-  let currentQ = null; // { type, op, pattern: 'blankMiddle'|'blankResult', first, second, result, answer, choices }
+  let currentQ = null;
   let solvedHistory = [];
   let isInputLocked = false;
 
@@ -121,9 +121,9 @@
   // 積み木のサイズ
   function getBlockDimensions(num) {
     const scale = Math.min(1.05, Math.max(0.78, Math.min(stageWidth / 640, stageHeight / 300)));
-    const clamped = Math.max(1, Math.min(28, num));
-    const w = Math.round((72 + clamped * 3.6) * scale);
-    const h = Math.round((62 + clamped * 2.4) * scale);
+    const clamped = Math.max(1, Math.min(30, num));
+    const w = Math.round((72 + clamped * 3.4) * scale);
+    const h = Math.round((62 + clamped * 2.2) * scale);
     return { w, h };
   }
 
@@ -132,17 +132,17 @@
     if (currentLevel === 'easy') {
       previewAdd.textContent = '4 ＋ [ ？ ] ＝ 10';
       previewSub.textContent = '8 － [ ？ ] ＝ 5';
-      previewMul.textContent = '2 × [ ？ ] ＝ 8';
+      previewMul.textContent = '2 × [ ？ ] ＝ 8'; // 2の段まで
       previewDiv.textContent = '6 ÷ [ ？ ] ＝ 3';
     } else if (currentLevel === 'normal') {
       previewAdd.textContent = '7 ＋ [ ？ ] ＝ 13';
       previewSub.textContent = '13 － [ ？ ] ＝ 8';
-      previewMul.textContent = '3 × [ ？ ] ＝ 12';
+      previewMul.textContent = '4 × [ ？ ] ＝ 12'; // 4の段まで
       previewDiv.textContent = '15 ÷ [ ？ ] ＝ 5';
     } else {
       previewAdd.textContent = '14 ＋ [ ？ ] ＝ 21';
       previewSub.textContent = '18 － [ ？ ] ＝ 9';
-      previewMul.textContent = '7 × [ ？ ] ＝ 28';
+      previewMul.textContent = '7 × [ ？ ] ＝ 56'; // 1〜9の段
       previewDiv.textContent = '24 ÷ [ ？ ] ＝ 6';
     }
   }
@@ -151,7 +151,6 @@
   function generateQuestions(course, level) {
     const pool = [];
 
-    // シャッフル補助
     const shuffle = (arr) => {
       for (let i = arr.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -164,7 +163,6 @@
 
     if (course === 'add') {
       if (level === 'easy') {
-        // 10までの足し算 ＆ 10づくり（1ねんせい きほん）
         for (let a = 1; a <= 9; a++) {
           pool.push({ type: 'add', op: '＋', first: a, second: 10 - a, result: 10 });
         }
@@ -174,7 +172,6 @@
           }
         }
       } else if (level === 'normal') {
-        // くりあがりの足し算（1〜2ねんせい 標準：合計11〜18）
         for (let a = 4; a <= 9; a++) {
           for (let b = 3; b <= 9; b++) {
             if (a + b >= 11 && a + b <= 18) {
@@ -183,7 +180,6 @@
           }
         }
       } else {
-        // 20を超える足し算（2ねんせい ちょうせん：11〜18 + 3〜9 = 15〜26）
         for (let a = 11; a <= 18; a++) {
           for (let b = 4; b <= 9; b++) {
             pool.push({ type: 'add', op: '＋', first: a, second: b, result: a + b });
@@ -192,14 +188,12 @@
       }
     } else if (course === 'sub') {
       if (level === 'easy') {
-        // 10までの引き算
         for (let a = 4; a <= 10; a++) {
           for (let b = 1; b < a; b++) {
             pool.push({ type: 'sub', op: '－', first: a, second: b, result: a - b });
           }
         }
       } else if (level === 'normal') {
-        // くり下がりの引き算（11〜18からの引き算：重要壁！）
         for (let a = 11; a <= 16; a++) {
           for (let b = a - 9; b <= 9; b++) {
             const res = a - b;
@@ -209,7 +203,6 @@
           }
         }
       } else {
-        // 20付近からの引き算（17〜20 － 6〜9）
         for (let a = 17; a <= 20; a++) {
           for (let b = 6; b <= 9; b++) {
             pool.push({ type: 'sub', op: '－', first: a, second: b, result: a - b });
@@ -217,36 +210,39 @@
         }
       }
     } else if (course === 'mul') {
+      // 掛け算：簡単＝2の段まで、普通＝4の段まで、むずかしい＝1〜9の段
       if (level === 'easy') {
-        // 2のだん・5のだん（基本九九）
-        [2, 5].forEach((a) => {
-          for (let b = 2; b <= 9; b++) {
+        // 【かんたん】2のだんまで（1の段・2の段）
+        [1, 2].forEach((a) => {
+          for (let b = 1; b <= 9; b++) {
             pool.push({ type: 'mul', op: '×', first: a, second: b, result: a * b });
           }
         });
       } else if (level === 'normal') {
-        // 3のだん・4のだん
-        [3, 4].forEach((a) => {
-          for (let b = 2; b <= 9; b++) {
+        // 【ふつう】4のだんまで（1〜4の段、特に3・4の段を中心に出題）
+        [1, 2, 3, 4].forEach((a) => {
+          for (let b = 1; b <= 9; b++) {
             pool.push({ type: 'mul', op: '×', first: a, second: b, result: a * b });
+            // 3・4の段の出題頻度を高めるために追加
+            if (a >= 3) {
+              pool.push({ type: 'mul', op: '×', first: a, second: b, result: a * b });
+            }
           }
         });
       } else {
-        // 6〜9のだん（後半九九）
-        for (let a = 6; a <= 9; a++) {
-          for (let b = 2; b <= 5; b++) {
+        // 【むずかしい】1〜9のだん（九九ぜんぶ：1〜9の段）
+        for (let a = 1; a <= 9; a++) {
+          for (let b = 1; b <= 9; b++) {
             pool.push({ type: 'mul', op: '×', first: a, second: b, result: a * b });
           }
         }
       }
     } else if (course === 'div') {
       if (level === 'easy') {
-        // はんぶんこ（÷2の等分）
         [4, 6, 8, 10, 12, 14, 16].forEach((a) => {
           pool.push({ type: 'div', op: '÷', first: a, second: 2, result: a / 2 });
         });
       } else if (level === 'normal') {
-        // 九九の逆（÷3〜÷5）
         [3, 4, 5].forEach((b) => {
           for (let res = 2; res <= 6; res++) {
             const a = b * res;
@@ -254,7 +250,6 @@
           }
         });
       } else {
-        // 少し大きめの割り算（÷4〜÷8）
         [6, 7, 8].forEach((b) => {
           for (let res = 2; res <= 5; res++) {
             const a = b * res;
@@ -267,9 +262,7 @@
     shuffle(pool);
     const selected = pool.slice(0, TOTAL_QUESTIONS);
 
-    // バリエーション付与（5問中2問は「こたえあて：A op B = [ ? ]」、3問は「あいだあて：A op [ ? ] = C」）
     return selected.map((q, idx) => {
-      // かんたん・ふつうでは計算形式（こたえあて）もブレンドして基礎力を固める
       const isBlankResult = idx === 1 || idx === 3;
       const pattern = isBlankResult ? 'blankResult' : 'blankMiddle';
       const answer = isBlankResult ? q.result : q.second;
@@ -291,13 +284,18 @@
     for (const off of offsets) {
       if (set.size >= 4) break;
       const cand = correctAnswer + off;
-      if (cand >= 1 && cand <= 36) {
+      if (cand >= 1 && cand <= 81) {
         set.add(cand);
       }
     }
 
     while (set.size < 4) {
-      const maxRand = level === 'hard' ? 24 : 12;
+      let maxRand = 12;
+      if (qType === 'mul') {
+        maxRand = level === 'hard' ? 81 : (level === 'normal' ? 36 : 18);
+      } else if (level === 'hard') {
+        maxRand = 28;
+      }
       const r = Math.floor(Math.random() * maxRand) + 1;
       set.add(r);
     }
@@ -470,9 +468,7 @@
     questionProgressEl.textContent = `だい ${idx + 1} もん / ${TOTAL_QUESTIONS} もん`;
     eqOpEl.textContent = currentQ.op;
 
-    // バリエーション別の黒板表示
     if (currentQ.pattern === 'blankMiddle') {
-      // A op [ ？ ] = C
       eqPartAEl.textContent = String(currentQ.first);
       eqPartAEl.className = 'eq-num';
 
@@ -483,10 +479,8 @@
       eqPartCEl.className = 'eq-num';
 
       blackboardMessageEl.textContent = `したの すうじを おして ${currentQ.result}に しよう！`;
-      // トレイには最初の数 A を乗せておく
       spawnBaseBlock(currentQ.first);
     } else {
-      // こたえあて形式： A op B = [ ？ ]
       eqPartAEl.textContent = String(currentQ.first);
       eqPartAEl.className = 'eq-num';
 
@@ -497,14 +491,12 @@
       eqPartCEl.className = 'eq-blank';
 
       blackboardMessageEl.textContent = `けいさんして こたえの すうじを おそう！`;
-      // トレイには A が乗り、上から B がすでに待機または合体する準備
       spawnBaseBlock(currentQ.first);
     }
 
     blackboardMessageEl.className = 'blackboard-message';
     choicesLabelEl.textContent = 'どの すうじを いれる？ えらんで おしてね！';
 
-    // 4択ボタン更新
     choiceBtns.forEach((btn, i) => {
       const val = currentQ.choices[i];
       btn.dataset.value = String(val);
@@ -542,8 +534,6 @@
       eqPartCEl.textContent = String(pickedNum);
     }
 
-    // 物理ブロック落下
-    // blankMiddleの場合は選んだ数字そのもの、blankResultの場合はBが落ちてきて計算
     const dropNum = currentQ.pattern === 'blankMiddle' ? pickedNum : currentQ.second;
     const { h } = getBlockDimensions(dropNum);
     const dropX = stageWidth / 2;
@@ -551,7 +541,7 @@
 
     hasTriggeredCollision = false;
     fallingBlock = createNumberBlock(dropX, dropY, dropNum, true);
-    fallingBlock.pickedNumber = pickedNum; // プレイヤーが選んだ数字を保持
+    fallingBlock.pickedNumber = pickedNum;
     Body.setVelocity(fallingBlock, { x: 0, y: 2.2 });
   }
 
@@ -585,7 +575,6 @@
     const dropVal = fallingBlock.numberValue;
     const op = currentQ.type;
 
-    // 演出上の計算結果
     let calcResult = 0;
     if (op === 'add') calcResult = firstVal + dropVal;
     else if (op === 'sub') calcResult = firstVal - dropVal;
@@ -674,7 +663,6 @@
       });
     }
 
-    // 正解・おしい判定
     if (pickedVal === currentQ.answer) {
       handleCorrectAnswer(pickedVal);
     } else {
@@ -737,7 +725,6 @@
         hintText = `おしい！ めざすのは ${targetVal} だよ！`;
       }
     } else {
-      // こたえあて形式
       hintText = `おしい！ ${currentQ.first} ${currentQ.op} ${currentQ.second} は ${pickedVal} じゃないよ！`;
     }
 
@@ -1144,7 +1131,6 @@
     });
   });
 
-  // 難易度タブ切り替え
   diffTabs.forEach((tab) => {
     tab.addEventListener('click', () => {
       window.se.playButton();
