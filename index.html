@@ -18,21 +18,22 @@
         <button id="btn-back-title" class="bb-ctrl-btn" type="button">
           もどる
         </button>
-        <div id="question-progress" class="question-progress">
-          だい 1 もん / 5 もん
+        <div class="header-center-info">
+          <span id="level-badge" class="level-badge">かんたん</span>
+          <span id="question-progress" class="question-progress">だい 1 もん / 5 もん</span>
         </div>
         <button id="btn-sound" class="bb-ctrl-btn" type="button" aria-pressed="true">
           おと あり
         </button>
       </div>
 
-      <!-- 穴埋め式の特大計算問題（＋, －, ×, ÷ に対応） -->
+      <!-- 穴埋め式の特大計算問題（＋, －, ×, ÷、こたえあて・あいだあて両対応） -->
       <div class="equation-row" aria-live="polite">
-        <span id="eq-first" class="eq-num">4</span>
+        <span id="eq-part-a" class="eq-num">4</span>
         <span id="eq-op" class="eq-op">＋</span>
-        <span id="eq-blank" class="eq-blank">？</span>
+        <span id="eq-part-b" class="eq-blank">？</span>
         <span class="eq-op">＝</span>
-        <span id="eq-target" class="eq-num">10</span>
+        <span id="eq-part-c" class="eq-num">10</span>
       </div>
 
       <!-- 黒板メッセージ・ヒント欄 -->
@@ -59,7 +60,7 @@
       </div>
     </footer>
 
-    <!-- タイトル・コース選択オーバーレイ画面（4大コース：たしざん・ひきざん・かけざん・わりざん） -->
+    <!-- タイトル・コース＆難易度選択オーバーレイ画面 -->
     <section id="title-overlay" class="overlay-screen">
       <div class="overlay-card">
         <div class="title-blackboard">
@@ -68,32 +69,46 @@
           <p class="title-desc">すうじを おして つみきを へんしん させよう！</p>
         </div>
 
-        <p class="course-select-heading">あそぶ もんだいを えらんでね</p>
+        <!-- 難易度セレクター（かんたん・ふつう・むずかしい） -->
+        <div class="difficulty-section">
+          <p class="section-heading">むずかしさを えらんでね</p>
+          <div class="difficulty-tabs" role="radiogroup" aria-label="むずかしさ">
+            <button class="diff-tab is-selected" type="button" data-level="easy">
+              かんたん
+            </button>
+            <button class="diff-tab" type="button" data-level="normal">
+              ふつう
+            </button>
+            <button class="diff-tab" type="button" data-level="hard">
+              むずかしい
+            </button>
+          </div>
+        </div>
 
-        <div class="course-grid">
-          <!-- 1. たしざん（10づくり・10まで・くりあがりを統合） -->
-          <button class="course-btn course-btn-add" type="button" data-course="add">
-            <span class="course-name">たしざん</span>
-            <span class="course-example">4 ＋ [ ？ ] ＝ 10</span>
-          </button>
+        <!-- 4大コース選択グリッド -->
+        <div class="courses-section">
+          <p class="section-heading">あそぶ もんだいを えらんでね</p>
+          <div class="course-grid">
+            <button class="course-btn course-btn-add" type="button" data-course="add">
+              <span class="course-name">たしざん</span>
+              <span id="preview-add" class="course-example">4 ＋ [ ？ ] ＝ 10</span>
+            </button>
 
-          <!-- 2. ひきざん -->
-          <button class="course-btn course-btn-sub" type="button" data-course="sub">
-            <span class="course-name">ひきざん</span>
-            <span class="course-example">8 － [ ？ ] ＝ 5</span>
-          </button>
+            <button class="course-btn course-btn-sub" type="button" data-course="sub">
+              <span class="course-name">ひきざん</span>
+              <span id="preview-sub" class="course-example">8 － [ ？ ] ＝ 5</span>
+            </button>
 
-          <!-- 3. かけざん -->
-          <button class="course-btn course-btn-mul" type="button" data-course="mul">
-            <span class="course-name">かけざん</span>
-            <span class="course-example">3 × [ ？ ] ＝ 12</span>
-          </button>
+            <button class="course-btn course-btn-mul" type="button" data-course="mul">
+              <span class="course-name">かけざん</span>
+              <span id="preview-mul" class="course-example">2 × [ ？ ] ＝ 8</span>
+            </button>
 
-          <!-- 4. わりざん -->
-          <button class="course-btn course-btn-div" type="button" data-course="div">
-            <span class="course-name">わりざん</span>
-            <span class="course-example">8 ÷ [ ？ ] ＝ 4</span>
-          </button>
+            <button class="course-btn course-btn-div" type="button" data-course="div">
+              <span class="course-name">わりざん</span>
+              <span id="preview-div" class="course-example">6 ÷ [ ？ ] ＝ 3</span>
+            </button>
+          </div>
         </div>
       </div>
     </section>
@@ -105,7 +120,6 @@
           <!-- SVGで描く大きな赤い「はなまる」 -->
           <div class="hanamaru-svg-wrap" aria-hidden="true">
             <svg viewBox="0 0 160 160" class="hanamaru-svg">
-              <!-- 外側の花びら（10枚） -->
               <path
                 d="M 80 12
                    Q 96 4, 104 20
@@ -129,7 +143,6 @@
                 stroke-width="6"
                 stroke-linejoin="round"
               />
-              <!-- 内側の二重丸と渦巻き -->
               <circle cx="80" cy="80" r="46" fill="none" stroke="#e63946" stroke-width="6" />
               <path
                 d="M 54 78
@@ -149,7 +162,7 @@
 
           <div class="result-title-box">
             <h2 class="result-title">100てん まんてん！</h2>
-            <p class="result-subtitle">5もん ぜんぶ せいかい できたね！</p>
+            <p id="result-subtitle" class="result-subtitle">5もん ぜんぶ せいかい できたね！</p>
           </div>
         </div>
 

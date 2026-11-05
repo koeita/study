@@ -1,4 +1,4 @@
-// すうじ つみき（たしざん・ひきざん・かけざん・わりざん あそび） メインスクリプト
+// すうじ つみき（たしざん・ひきざん・かけざん・わりざん 難易度＆バリエーション対応） メインスクリプト
 (() => {
   const { Engine, World, Bodies, Body, Events } = Matter;
 
@@ -9,11 +9,12 @@
 
   const btnBackTitle = document.getElementById('btn-back-title');
   const btnSound = document.getElementById('btn-sound');
+  const levelBadgeEl = document.getElementById('level-badge');
   const questionProgressEl = document.getElementById('question-progress');
-  const eqFirstEl = document.getElementById('eq-first');
+  const eqPartAEl = document.getElementById('eq-part-a');
   const eqOpEl = document.getElementById('eq-op');
-  const eqBlankEl = document.getElementById('eq-blank');
-  const eqTargetEl = document.getElementById('eq-target');
+  const eqPartBEl = document.getElementById('eq-part-b');
+  const eqPartCEl = document.getElementById('eq-part-c');
   const blackboardMessageEl = document.getElementById('blackboard-message');
   const choicesLabelEl = document.getElementById('choices-label');
   const choicesGridEl = document.getElementById('choices-grid');
@@ -21,12 +22,19 @@
 
   const titleOverlay = document.getElementById('title-overlay');
   const resultOverlay = document.getElementById('result-overlay');
+  const resultSubtitleEl = document.getElementById('result-subtitle');
   const reviewListEl = document.getElementById('review-list');
   const btnReplaySame = document.getElementById('btn-replay-same');
   const btnReplaySelect = document.getElementById('btn-replay-select');
   const courseBtns = Array.from(document.querySelectorAll('.course-btn'));
+  const diffTabs = Array.from(document.querySelectorAll('.diff-tab'));
 
-  // 配色パレット（黒板＆積み木トーン、グラデーション・ネオン不使用）
+  const previewAdd = document.getElementById('preview-add');
+  const previewSub = document.getElementById('preview-sub');
+  const previewMul = document.getElementById('preview-mul');
+  const previewDiv = document.getElementById('preview-div');
+
+  // 配色パレット
   const COLORS = {
     bg: '#f9f6f0',
     navy: '#2c3e50',
@@ -49,12 +57,20 @@
     ]
   };
 
+  // 難易度表示ラベル
+  const LEVEL_NAMES = {
+    easy: 'かんたん',
+    normal: 'ふつう',
+    hard: 'むずかしい'
+  };
+
   // ゲーム進行状態
   const TOTAL_QUESTIONS = 5;
+  let currentLevel = 'easy'; // 'easy' | 'normal' | 'hard'
   let currentCourse = 'add'; // 'add' | 'sub' | 'mul' | 'div'
   let questionIndex = 0;
   let questions = [];
-  let currentQ = null; // { type, op, first, answer, target, choices }
+  let currentQ = null; // { type, op, pattern: 'blankMiddle'|'blankResult', first, second, result, answer, choices }
   let solvedHistory = [];
   let isInputLocked = false;
 
@@ -94,7 +110,7 @@
     activeTimers = [];
   }
 
-  // 数字に応じた積み木の色
+  // 積み木の色
   function getBlockColor(num) {
     if (num <= 0) return '#e2e2e2';
     if (num === 10) return '#ffcb77';
@@ -102,125 +118,190 @@
     return COLORS.blockPalette[(num - 1) % COLORS.blockPalette.length];
   }
 
-  // 数字に応じた積み木のサイズ（幅・高さ）
+  // 積み木のサイズ
   function getBlockDimensions(num) {
     const scale = Math.min(1.05, Math.max(0.78, Math.min(stageWidth / 640, stageHeight / 300)));
-    const clamped = Math.max(1, Math.min(25, num));
-    const w = Math.round((74 + clamped * 3.8) * scale);
-    const h = Math.round((64 + clamped * 2.5) * scale);
+    const clamped = Math.max(1, Math.min(28, num));
+    const w = Math.round((72 + clamped * 3.6) * scale);
+    const h = Math.round((62 + clamped * 2.4) * scale);
     return { w, h };
   }
 
-  // コースに応じた5問を生成
-  function generateQuestions(course) {
+  // 難易度変更時のコースプレビュー表記更新
+  function updateCoursePreviews() {
+    if (currentLevel === 'easy') {
+      previewAdd.textContent = '4 ＋ [ ？ ] ＝ 10';
+      previewSub.textContent = '8 － [ ？ ] ＝ 5';
+      previewMul.textContent = '2 × [ ？ ] ＝ 8';
+      previewDiv.textContent = '6 ÷ [ ？ ] ＝ 3';
+    } else if (currentLevel === 'normal') {
+      previewAdd.textContent = '7 ＋ [ ？ ] ＝ 13';
+      previewSub.textContent = '13 － [ ？ ] ＝ 8';
+      previewMul.textContent = '3 × [ ？ ] ＝ 12';
+      previewDiv.textContent = '15 ÷ [ ？ ] ＝ 5';
+    } else {
+      previewAdd.textContent = '14 ＋ [ ？ ] ＝ 21';
+      previewSub.textContent = '18 － [ ？ ] ＝ 9';
+      previewMul.textContent = '7 × [ ？ ] ＝ 28';
+      previewDiv.textContent = '24 ÷ [ ？ ] ＝ 6';
+    }
+  }
+
+  // 難易度・コースに応じた問題プール生成
+  function generateQuestions(course, level) {
     const pool = [];
 
+    // シャッフル補助
+    const shuffle = (arr) => {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const t = arr[i];
+        arr[i] = arr[j];
+        arr[j] = t;
+      }
+      return arr;
+    };
+
     if (course === 'add') {
-      // 【たしざん】統合コース（10をつくろう＋10まで＋くりあがり をバランスよく混合）
-      const poolMake10 = [];
-      for (let a = 1; a <= 9; a++) {
-        poolMake10.push({ type: 'add', op: '＋', first: a, answer: 10 - a, target: 10 });
-      }
-
-      const poolAdd10 = [];
-      for (let target = 4; target <= 9; target++) {
-        for (let a = 1; a < target; a++) {
-          poolAdd10.push({ type: 'add', op: '＋', first: a, answer: target - a, target });
+      if (level === 'easy') {
+        // 10までの足し算 ＆ 10づくり（1ねんせい きほん）
+        for (let a = 1; a <= 9; a++) {
+          pool.push({ type: 'add', op: '＋', first: a, second: 10 - a, result: 10 });
         }
-      }
-
-      const poolCarry = [];
-      for (let a = 3; a <= 9; a++) {
-        for (let b = 2; b <= 9; b++) {
-          if (a + b >= 11 && a + b <= 18) {
-            poolCarry.push({ type: 'add', op: '＋', first: a, answer: b, target: a + b });
+        for (let res = 4; res <= 9; res++) {
+          for (let a = 1; a < res; a++) {
+            pool.push({ type: 'add', op: '＋', first: a, second: res - a, result: res });
+          }
+        }
+      } else if (level === 'normal') {
+        // くりあがりの足し算（1〜2ねんせい 標準：合計11〜18）
+        for (let a = 4; a <= 9; a++) {
+          for (let b = 3; b <= 9; b++) {
+            if (a + b >= 11 && a + b <= 18) {
+              pool.push({ type: 'add', op: '＋', first: a, second: b, result: a + b });
+            }
+          }
+        }
+      } else {
+        // 20を超える足し算（2ねんせい ちょうせん：11〜18 + 3〜9 = 15〜26）
+        for (let a = 11; a <= 18; a++) {
+          for (let b = 4; b <= 9; b++) {
+            pool.push({ type: 'add', op: '＋', first: a, second: b, result: a + b });
           }
         }
       }
-
-      // シャッフル用ヘルパー
-      const shuffle = (arr) => {
-        for (let i = arr.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          const t = arr[i];
-          arr[i] = arr[j];
-          arr[j] = t;
-        }
-        return arr;
-      };
-
-      shuffle(poolMake10);
-      shuffle(poolAdd10);
-      shuffle(poolCarry);
-
-      // 5問の内訳：10をつくろう(2問) ＋ 10までのたしざん(1〜2問) ＋ くりあがり(1〜2問)
-      const selectedAdd = [
-        poolMake10[0],
-        poolMake10[1],
-        poolAdd10[0],
-        poolCarry[0],
-        Math.random() < 0.5 ? poolAdd10[1] : poolCarry[1]
-      ];
-      pool.push(...selectedAdd);
     } else if (course === 'sub') {
-      // 【ひきざん】 a － [ ? ] ＝ target (a: 4〜10, target: 1〜a-1)
-      for (let a = 4; a <= 10; a++) {
-        for (let target = 1; target < a; target++) {
-          pool.push({ type: 'sub', op: '－', first: a, answer: a - target, target });
+      if (level === 'easy') {
+        // 10までの引き算
+        for (let a = 4; a <= 10; a++) {
+          for (let b = 1; b < a; b++) {
+            pool.push({ type: 'sub', op: '－', first: a, second: b, result: a - b });
+          }
+        }
+      } else if (level === 'normal') {
+        // くり下がりの引き算（11〜18からの引き算：重要壁！）
+        for (let a = 11; a <= 16; a++) {
+          for (let b = a - 9; b <= 9; b++) {
+            const res = a - b;
+            if (res >= 2 && res <= 9) {
+              pool.push({ type: 'sub', op: '－', first: a, second: b, result: res });
+            }
+          }
+        }
+      } else {
+        // 20付近からの引き算（17〜20 － 6〜9）
+        for (let a = 17; a <= 20; a++) {
+          for (let b = 6; b <= 9; b++) {
+            pool.push({ type: 'sub', op: '－', first: a, second: b, result: a - b });
+          }
         }
       }
     } else if (course === 'mul') {
-      // 【かけざん】 a × [ ? ] ＝ target (2〜5の段)
-      for (let a = 2; a <= 5; a++) {
-        for (let b = 2; b <= 5; b++) {
-          pool.push({ type: 'mul', op: '×', first: a, answer: b, target: a * b });
+      if (level === 'easy') {
+        // 2のだん・5のだん（基本九九）
+        [2, 5].forEach((a) => {
+          for (let b = 2; b <= 9; b++) {
+            pool.push({ type: 'mul', op: '×', first: a, second: b, result: a * b });
+          }
+        });
+      } else if (level === 'normal') {
+        // 3のだん・4のだん
+        [3, 4].forEach((a) => {
+          for (let b = 2; b <= 9; b++) {
+            pool.push({ type: 'mul', op: '×', first: a, second: b, result: a * b });
+          }
+        });
+      } else {
+        // 6〜9のだん（後半九九）
+        for (let a = 6; a <= 9; a++) {
+          for (let b = 2; b <= 5; b++) {
+            pool.push({ type: 'mul', op: '×', first: a, second: b, result: a * b });
+          }
         }
       }
     } else if (course === 'div') {
-      // 【わりざん】 a ÷ [ ? ] ＝ target (等分)
-      const targets = [2, 3, 4, 5];
-      const answers = [2, 3, 4];
-      targets.forEach((tg) => {
-        answers.forEach((ans) => {
-          const a = tg * ans;
-          if (a <= 20) {
-            pool.push({ type: 'div', op: '÷', first: a, answer: ans, target: tg });
+      if (level === 'easy') {
+        // はんぶんこ（÷2の等分）
+        [4, 6, 8, 10, 12, 14, 16].forEach((a) => {
+          pool.push({ type: 'div', op: '÷', first: a, second: 2, result: a / 2 });
+        });
+      } else if (level === 'normal') {
+        // 九九の逆（÷3〜÷5）
+        [3, 4, 5].forEach((b) => {
+          for (let res = 2; res <= 6; res++) {
+            const a = b * res;
+            pool.push({ type: 'div', op: '÷', first: a, second: b, result: res });
           }
         });
-      });
+      } else {
+        // 少し大きめの割り算（÷4〜÷8）
+        [6, 7, 8].forEach((b) => {
+          for (let res = 2; res <= 5; res++) {
+            const a = b * res;
+            pool.push({ type: 'div', op: '÷', first: a, second: b, result: res });
+          }
+        });
+      }
     }
 
-    // シャッフル
-    for (let i = pool.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      const tmp = pool[i];
-      pool[i] = pool[j];
-      pool[j] = tmp;
-    }
-
+    shuffle(pool);
     const selected = pool.slice(0, TOTAL_QUESTIONS);
-    return selected.map((q) => ({
-      ...q,
-      choices: generateFourChoices(q.answer, q.type)
-    }));
+
+    // バリエーション付与（5問中2問は「こたえあて：A op B = [ ? ]」、3問は「あいだあて：A op [ ? ] = C」）
+    return selected.map((q, idx) => {
+      // かんたん・ふつうでは計算形式（こたえあて）もブレンドして基礎力を固める
+      const isBlankResult = idx === 1 || idx === 3;
+      const pattern = isBlankResult ? 'blankResult' : 'blankMiddle';
+      const answer = isBlankResult ? q.result : q.second;
+
+      return {
+        ...q,
+        pattern,
+        answer,
+        choices: generateFourChoices(answer, q.type, level)
+      };
+    });
   }
 
-  // 4択ボタンの選択肢生成
-  function generateFourChoices(correctAnswer, qType) {
+  // 4択ボタン選択肢の生成
+  function generateFourChoices(correctAnswer, qType, level) {
     const set = new Set([correctAnswer]);
-    const offsets = [-1, 1, -2, 2, -3, 3];
+    const offsets = [-1, 1, -2, 2, -3, 3, -4, 4];
+
     for (const off of offsets) {
       if (set.size >= 4) break;
       const cand = correctAnswer + off;
-      if (cand >= 1 && cand <= 10) {
+      if (cand >= 1 && cand <= 36) {
         set.add(cand);
       }
     }
+
     while (set.size < 4) {
-      const maxR = qType === 'mul' || qType === 'div' ? 6 : 9;
-      const r = Math.floor(Math.random() * maxR) + 1;
+      const maxRand = level === 'hard' ? 24 : 12;
+      const r = Math.floor(Math.random() * maxRand) + 1;
       set.add(r);
     }
+
     return Array.from(set).sort((a, b) => a - b);
   }
 
@@ -318,7 +399,7 @@
     }
   }
 
-  // すうじ積み木ボディ生成
+  // ブロック生成
   function createNumberBlock(x, y, num, isFalling = false) {
     const { w, h } = getBlockDimensions(num);
     const block = Bodies.rectangle(x, y, w, h, {
@@ -351,7 +432,7 @@
     hasTriggeredCollision = false;
   }
 
-  // 最初のブロック配置
+  // トレイ上の初期ブロック配置
   function spawnBaseBlock(num) {
     clearBlocks();
     const { h } = getBlockDimensions(num);
@@ -361,22 +442,24 @@
   }
 
   // コース開始
-  function startCourse(course) {
+  function startCourse(course, level) {
     clearAllTimers();
     currentCourse = course;
+    currentLevel = level || currentLevel;
     questionIndex = 0;
     solvedHistory = [];
-    questions = generateQuestions(course);
+    questions = generateQuestions(currentCourse, currentLevel);
 
     titleOverlay.classList.add('is-hidden');
     resultOverlay.classList.add('is-hidden');
     resultOverlay.setAttribute('aria-hidden', 'true');
 
+    levelBadgeEl.textContent = LEVEL_NAMES[currentLevel];
     setupStageGeometry();
     loadQuestion(0);
   }
 
-  // 問題セット
+  // 問題ロード
   function loadQuestion(idx) {
     clearAllTimers();
     questionIndex = idx;
@@ -384,15 +467,40 @@
     isInputLocked = false;
     hanamaruStamp = null;
 
-    // 黒板表示更新
     questionProgressEl.textContent = `だい ${idx + 1} もん / ${TOTAL_QUESTIONS} もん`;
-    eqFirstEl.textContent = String(currentQ.first);
     eqOpEl.textContent = currentQ.op;
-    eqBlankEl.textContent = '？';
-    eqBlankEl.className = 'eq-blank';
-    eqTargetEl.textContent = String(currentQ.target);
 
-    blackboardMessageEl.textContent = `したの すうじを おして ${currentQ.target}に しよう！`;
+    // バリエーション別の黒板表示
+    if (currentQ.pattern === 'blankMiddle') {
+      // A op [ ？ ] = C
+      eqPartAEl.textContent = String(currentQ.first);
+      eqPartAEl.className = 'eq-num';
+
+      eqPartBEl.textContent = '？';
+      eqPartBEl.className = 'eq-blank';
+
+      eqPartCEl.textContent = String(currentQ.result);
+      eqPartCEl.className = 'eq-num';
+
+      blackboardMessageEl.textContent = `したの すうじを おして ${currentQ.result}に しよう！`;
+      // トレイには最初の数 A を乗せておく
+      spawnBaseBlock(currentQ.first);
+    } else {
+      // こたえあて形式： A op B = [ ？ ]
+      eqPartAEl.textContent = String(currentQ.first);
+      eqPartAEl.className = 'eq-num';
+
+      eqPartBEl.textContent = String(currentQ.second);
+      eqPartBEl.className = 'eq-num';
+
+      eqPartCEl.textContent = '？';
+      eqPartCEl.className = 'eq-blank';
+
+      blackboardMessageEl.textContent = `けいさんして こたえの すうじを おそう！`;
+      // トレイには A が乗り、上から B がすでに待機または合体する準備
+      spawnBaseBlock(currentQ.first);
+    }
+
     blackboardMessageEl.className = 'blackboard-message';
     choicesLabelEl.textContent = 'どの すうじを いれる？ えらんで おしてね！';
 
@@ -404,16 +512,14 @@
       btn.classList.remove('is-pressed');
 
       let dotsHtml = '<div class="btn-dots" aria-hidden="true">';
-      for (let d = 0; d < val; d++) {
+      const maxDotDisplay = Math.min(10, val);
+      for (let d = 0; d < maxDotDisplay; d++) {
         dotsHtml += '<span class="btn-dot"></span>';
       }
       dotsHtml += '</div>';
 
       btn.innerHTML = `<span>${val}</span>${dotsHtml}`;
     });
-
-    // 最初のブロックセット
-    spawnBaseBlock(currentQ.first);
   }
 
   // 4択ボタン選択
@@ -430,14 +536,22 @@
       btnElement.classList.add('is-pressed');
     }
 
-    eqBlankEl.textContent = String(pickedNum);
+    if (currentQ.pattern === 'blankMiddle') {
+      eqPartBEl.textContent = String(pickedNum);
+    } else {
+      eqPartCEl.textContent = String(pickedNum);
+    }
 
-    const { h } = getBlockDimensions(pickedNum);
+    // 物理ブロック落下
+    // blankMiddleの場合は選んだ数字そのもの、blankResultの場合はBが落ちてきて計算
+    const dropNum = currentQ.pattern === 'blankMiddle' ? pickedNum : currentQ.second;
+    const { h } = getBlockDimensions(dropNum);
     const dropX = stageWidth / 2;
     const dropY = Math.max(28, h / 2 + 6);
 
     hasTriggeredCollision = false;
-    fallingBlock = createNumberBlock(dropX, dropY, pickedNum, true);
+    fallingBlock = createNumberBlock(dropX, dropY, dropNum, true);
+    fallingBlock.pickedNumber = pickedNum; // プレイヤーが選んだ数字を保持
     Body.setVelocity(fallingBlock, { x: 0, y: 2.2 });
   }
 
@@ -462,19 +576,21 @@
     }
   }
 
-  // 演算の物理演出
+  // 物理演出
   function performOperation() {
     if (!baseBlock || !fallingBlock || !currentQ) return;
 
     const firstVal = baseBlock.numberValue;
-    const pickedVal = fallingBlock.numberValue;
+    const pickedVal = fallingBlock.pickedNumber;
+    const dropVal = fallingBlock.numberValue;
     const op = currentQ.type;
 
-    let resultVal = 0;
-    if (op === 'add') resultVal = firstVal + pickedVal;
-    else if (op === 'sub') resultVal = firstVal - pickedVal;
-    else if (op === 'mul') resultVal = firstVal * pickedVal;
-    else if (op === 'div') resultVal = Math.floor(firstVal / pickedVal);
+    // 演出上の計算結果
+    let calcResult = 0;
+    if (op === 'add') calcResult = firstVal + dropVal;
+    else if (op === 'sub') calcResult = firstVal - dropVal;
+    else if (op === 'mul') calcResult = firstVal * dropVal;
+    else if (op === 'div') calcResult = Math.floor(firstVal / dropVal);
 
     const midX = stageWidth / 2;
     const midY = (baseBlock.position.y + fallingBlock.position.y) / 2;
@@ -485,12 +601,11 @@
     fallingBlock = null;
 
     if (op === 'add') {
-      const merged = createNumberBlock(midX, midY, resultVal, false);
+      const merged = createNumberBlock(midX, midY, calcResult, false);
       merged.popScale = 0.65;
       Body.setVelocity(merged, { x: 0, y: -3.2 });
       transformedBlocks = [merged];
-
-      window.se.playMerge(resultVal);
+      window.se.playMerge(calcResult);
 
       shockwaves.push({
         x: midX,
@@ -498,14 +613,14 @@
         r: 25,
         maxR: 110,
         alpha: 1.0,
-        color: resultVal === currentQ.target ? '#2a9d8f' : '#e76f51'
+        color: pickedVal === currentQ.answer ? '#2a9d8f' : '#e76f51'
       });
     } else if (op === 'sub') {
-      const remVal = Math.max(0, resultVal);
+      const remVal = Math.max(0, calcResult);
       const remainBlock = createNumberBlock(midX, midY, remVal, false);
       Body.setVelocity(remainBlock, { x: -1, y: -2 });
 
-      const scrap = createNumberBlock(midX + 35, midY - 10, pickedVal, false);
+      const scrap = createNumberBlock(midX + 35, midY - 10, dropVal, false);
       scrap.popScale = 0.75;
       Body.setVelocity(scrap, { x: 4.8, y: -3.8 });
       Body.setAngularVelocity(scrap, 0.15);
@@ -519,14 +634,13 @@
         r: 20,
         maxR: 90,
         alpha: 1.0,
-        color: resultVal === currentQ.target ? '#2a9d8f' : '#a0c4ff'
+        color: pickedVal === currentQ.answer ? '#2a9d8f' : '#a0c4ff'
       });
     } else if (op === 'mul') {
-      const mulBlock = createNumberBlock(midX, midY, resultVal, false);
+      const mulBlock = createNumberBlock(midX, midY, calcResult, false);
       mulBlock.popScale = 0.55;
       Body.setVelocity(mulBlock, { x: 0, y: -4.0 });
       transformedBlocks = [mulBlock];
-
       window.se.playMultiply();
 
       shockwaves.push({
@@ -535,12 +649,12 @@
         r: 30,
         maxR: 130,
         alpha: 1.0,
-        color: resultVal === currentQ.target ? '#2a9d8f' : '#ffd166'
+        color: pickedVal === currentQ.answer ? '#2a9d8f' : '#ffd166'
       });
     } else if (op === 'div') {
-      const halfW = getBlockDimensions(resultVal).w;
-      const leftPart = createNumberBlock(midX - halfW * 0.4, midY, resultVal, false);
-      const rightPart = createNumberBlock(midX + halfW * 0.4, midY, resultVal, false);
+      const halfW = getBlockDimensions(calcResult).w;
+      const leftPart = createNumberBlock(midX - halfW * 0.4, midY, calcResult, false);
+      const rightPart = createNumberBlock(midX + halfW * 0.4, midY, calcResult, false);
 
       Body.setVelocity(leftPart, { x: -2.8, y: -3.0 });
       Body.setVelocity(rightPart, { x: 2.8, y: -3.0 });
@@ -556,29 +670,30 @@
         r: 20,
         maxR: 100,
         alpha: 1.0,
-        color: resultVal === currentQ.target ? '#2a9d8f' : '#ffc6ff'
+        color: pickedVal === currentQ.answer ? '#2a9d8f' : '#ffc6ff'
       });
     }
 
-    if (resultVal === currentQ.target) {
-      handleCorrectAnswer(firstVal, pickedVal, resultVal);
+    // 正解・おしい判定
+    if (pickedVal === currentQ.answer) {
+      handleCorrectAnswer(pickedVal);
     } else {
-      handleWrongAnswer(firstVal, pickedVal, resultVal);
+      handleWrongAnswer(pickedVal, calcResult);
     }
   }
 
   // 正解処理
-  function handleCorrectAnswer(firstVal, pickedVal, resultVal) {
-    eqBlankEl.className = 'eq-blank is-filled-correct';
-    blackboardMessageEl.textContent = `${firstVal} ${currentQ.op} ${pickedVal} ＝ ${resultVal}　せいかい！`;
+  function handleCorrectAnswer(pickedVal) {
+    const blankEl = currentQ.pattern === 'blankMiddle' ? eqPartBEl : eqPartCEl;
+    blankEl.className = 'eq-blank is-filled-correct';
+
+    const fullEq = `${currentQ.first} ${currentQ.op} ${currentQ.second} ＝ ${currentQ.result}`;
+    blackboardMessageEl.textContent = `${fullEq}　せいかい！`;
     blackboardMessageEl.className = 'blackboard-message is-correct';
     choicesLabelEl.textContent = 'やったね！ ぴったり へんしん できたよ！';
 
     solvedHistory.push({
-      first: firstVal,
-      op: currentQ.op,
-      answer: pickedVal,
-      target: resultVal
+      text: fullEq
     });
 
     window.se.playPinPon();
@@ -604,25 +719,26 @@
     }, 1500);
   }
 
-  // 不正解ヒント処理
-  function handleWrongAnswer(firstVal, pickedVal, resultVal) {
-    const targetVal = currentQ.target;
-    const op = currentQ.type;
-    eqBlankEl.className = 'eq-blank is-filled-wrong';
+  // 間違えたとき（おしいヒント）
+  function handleWrongAnswer(pickedVal, calcResult) {
+    const blankEl = currentQ.pattern === 'blankMiddle' ? eqPartBEl : eqPartCEl;
+    blankEl.className = 'eq-blank is-filled-wrong';
 
     let hintText = '';
-    if (op === 'add') {
-      if (resultVal < targetVal) {
-        hintText = `おしい！ ${firstVal} ＋ ${pickedVal} は ${resultVal} だね（あと ${targetVal - resultVal} たりないよ！）`;
+    if (currentQ.pattern === 'blankMiddle') {
+      const targetVal = currentQ.result;
+      if (currentQ.type === 'add') {
+        if (calcResult < targetVal) {
+          hintText = `おしい！ あと ${targetVal - calcResult} たりないよ！`;
+        } else {
+          hintText = `おしい！ ${calcResult - targetVal} おおきいね！`;
+        }
       } else {
-        hintText = `おしい！ ${firstVal} ＋ ${pickedVal} は ${resultVal} になっちゃった！（${resultVal - targetVal} おおきいね）`;
+        hintText = `おしい！ めざすのは ${targetVal} だよ！`;
       }
-    } else if (op === 'sub') {
-      hintText = `おしい！ ${firstVal} － ${pickedVal} は ${resultVal} だね（めざすのは ${targetVal} だよ！）`;
-    } else if (op === 'mul') {
-      hintText = `おしい！ ${firstVal} × ${pickedVal} は ${resultVal} だね（めざすのは ${targetVal} だよ！）`;
-    } else if (op === 'div') {
-      hintText = `おしい！ ${firstVal} ÷ ${pickedVal} は ${resultVal} だね（めざすのは ${targetVal} だよ！）`;
+    } else {
+      // こたえあて形式
+      hintText = `おしい！ ${currentQ.first} ${currentQ.op} ${currentQ.second} は ${pickedVal} じゃないよ！`;
     }
 
     blackboardMessageEl.textContent = hintText;
@@ -634,7 +750,7 @@
     floatingTexts.push({
       x: stageWidth / 2,
       y: Math.max(46, stageHeight * 0.22),
-      text: `${firstVal} ${currentQ.op} ${pickedVal} ＝ ${resultVal}`,
+      text: `こたえは ${currentQ.answer} かな？`,
       color: '#e76f51',
       life: 1.0
     });
@@ -655,9 +771,9 @@
         }
       });
 
-      spawnBaseBlock(firstVal);
-      eqBlankEl.textContent = '？';
-      eqBlankEl.className = 'eq-blank';
+      spawnBaseBlock(currentQ.first);
+      blankEl.textContent = '？';
+      blankEl.className = 'eq-blank';
 
       choiceBtns.forEach((b) => {
         b.disabled = false;
@@ -671,13 +787,14 @@
   function showResultScreen() {
     window.se.playFanfare();
 
+    resultSubtitleEl.textContent = `【${LEVEL_NAMES[currentLevel]}】5もん ぜんぶ せいかい できたね！`;
     reviewListEl.innerHTML = '';
     solvedHistory.forEach((item, idx) => {
       const li = document.createElement('li');
       li.className = 'review-item';
       li.innerHTML = `
         <span class="review-num-badge">だい ${idx + 1} もん</span>
-        <span class="review-eq">${item.first} ${item.op} ${item.answer} ＝ ${item.target}</span>
+        <span class="review-eq">${item.text}</span>
         <span class="review-mark">せいかい</span>
       `;
       reviewListEl.appendChild(li);
@@ -793,7 +910,7 @@
     ctx.lineCap = 'round';
     ctx.stroke();
 
-    const fontSize = Math.round(Math.min(w, h) * 0.46);
+    const fontSize = Math.round(Math.min(w, h) * 0.44);
     ctx.font = `800 ${fontSize}px 'M PLUS Rounded 1c', sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -810,9 +927,9 @@
     if (num <= 0) return;
     const maxCols = 5;
     const rows = Math.ceil(num / maxCols);
-    const dotRadius = Math.max(2.8, Math.min(5.0, Math.min(w, h) * 0.055));
-    const colGap = dotRadius * 2.75;
-    const rowGap = dotRadius * 2.45;
+    const dotRadius = Math.max(2.6, Math.min(4.8, Math.min(w, h) * 0.052));
+    const colGap = dotRadius * 2.7;
+    const rowGap = dotRadius * 2.4;
     const startY = h * 0.15 - ((rows - 1) * rowGap) * 0.25;
 
     let remaining = num;
@@ -890,7 +1007,6 @@
 
   // エフェクト描画
   function drawAndUpdateEffects() {
-    // 1. 波紋
     for (let i = shockwaves.length - 1; i >= 0; i--) {
       const sw = shockwaves[i];
       sw.r += (sw.maxR - sw.r) * 0.22;
@@ -909,7 +1025,6 @@
       ctx.restore();
     }
 
-    // 2. 紙吹雪
     for (let i = confettiList.length - 1; i >= 0; i--) {
       const p = confettiList[i];
       p.x += p.vx;
@@ -936,7 +1051,6 @@
       ctx.restore();
     }
 
-    // 3. 吹き出しテキスト
     for (let i = floatingTexts.length - 1; i >= 0; i--) {
       const ft = floatingTexts[i];
       ft.y -= 0.4;
@@ -972,7 +1086,6 @@
       ctx.restore();
     }
 
-    // 4. はなまる
     drawCanvasHanamaru();
   }
 
@@ -1031,11 +1144,22 @@
     });
   });
 
+  // 難易度タブ切り替え
+  diffTabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      window.se.playButton();
+      diffTabs.forEach((t) => t.classList.remove('is-selected'));
+      tab.classList.add('is-selected');
+      currentLevel = tab.dataset.level || 'easy';
+      updateCoursePreviews();
+    });
+  });
+
   courseBtns.forEach((btn) => {
     btn.addEventListener('click', () => {
       window.se.playButton();
       const course = btn.dataset.course || 'add';
-      startCourse(course);
+      startCourse(course, currentLevel);
     });
   });
 
@@ -1047,7 +1171,7 @@
 
   btnReplaySame.addEventListener('click', () => {
     window.se.playButton();
-    startCourse(currentCourse);
+    startCourse(currentCourse, currentLevel);
   });
 
   btnReplaySelect.addEventListener('click', () => {
@@ -1070,7 +1194,8 @@
 
   // 初期起動
   initPhysics();
-  questions = generateQuestions('add');
+  updateCoursePreviews();
+  questions = generateQuestions('add', 'easy');
   loadQuestion(0);
   requestAnimationFrame(gameLoop);
 })();
