@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>すうじ つみき（たしざん あそび）</title>
+  <title>すうじ つみき（さんすう あそび）</title>
   <!-- Google Fonts: M PLUS Rounded 1c (700 / 800) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -26,10 +26,10 @@
         </button>
       </div>
 
-      <!-- 穴埋め式の特大計算問題 -->
+      <!-- 穴埋め式の特大計算問題（＋, －, ×, ÷ に対応） -->
       <div class="equation-row" aria-live="polite">
         <span id="eq-first" class="eq-num">4</span>
-        <span class="eq-op">＋</span>
+        <span id="eq-op" class="eq-op">＋</span>
         <span id="eq-blank" class="eq-blank">？</span>
         <span class="eq-op">＝</span>
         <span id="eq-target" class="eq-num">10</span>
@@ -37,7 +37,7 @@
 
       <!-- 黒板メッセージ・ヒント欄 -->
       <div id="blackboard-message" class="blackboard-message">
-        したの すうじを おして 10を つくろう！
+        したの すうじを おして つみきを あてよう！
       </div>
     </header>
 
@@ -59,31 +59,48 @@
       </div>
     </footer>
 
-    <!-- タイトル・コース選択オーバーレイ画面 -->
+    <!-- タイトル・コース選択オーバーレイ画面（6コース対応） -->
     <section id="title-overlay" class="overlay-screen">
       <div class="overlay-card">
         <div class="title-blackboard">
           <p class="title-sub">たのしい さんすう つみき</p>
           <h1 class="title-main">すうじ つみき</h1>
-          <p class="title-desc">すうじを おして つみきを がったい させよう！</p>
+          <p class="title-desc">すうじを おして つみきを へんしん させよう！</p>
         </div>
 
         <p class="course-select-heading">あそぶ もんだいを えらんでね</p>
 
-        <div class="course-list">
+        <div class="course-grid">
+          <!-- たし算系 -->
           <button class="course-btn course-btn-1" type="button" data-course="make10">
             <span class="course-name">10を つくろう</span>
             <span class="course-example">4 ＋ [ ？ ] ＝ 10</span>
           </button>
 
           <button class="course-btn course-btn-2" type="button" data-course="add10">
-            <span class="course-name">たしざん（10まで）</span>
+            <span class="course-name">たしざん</span>
             <span class="course-example">3 ＋ [ ？ ] ＝ 8</span>
           </button>
 
           <button class="course-btn course-btn-3" type="button" data-course="carry">
-            <span class="course-name">くりあがりの たしざん</span>
+            <span class="course-name">くりあがり</span>
             <span class="course-example">7 ＋ [ ？ ] ＝ 13</span>
+          </button>
+
+          <!-- 引き算・掛け算・割り算系 -->
+          <button class="course-btn course-btn-4" type="button" data-course="sub">
+            <span class="course-name">ひきざん</span>
+            <span class="course-example">8 － [ ？ ] ＝ 5</span>
+          </button>
+
+          <button class="course-btn course-btn-5" type="button" data-course="mul">
+            <span class="course-name">かけざん</span>
+            <span class="course-example">3 × [ ？ ] ＝ 12</span>
+          </button>
+
+          <button class="course-btn course-btn-6" type="button" data-course="div">
+            <span class="course-name">わりざん</span>
+            <span class="course-example">8 ÷ [ ？ ] ＝ 4</span>
           </button>
         </div>
       </div>

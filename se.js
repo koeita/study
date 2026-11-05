@@ -26,7 +26,7 @@ class SoundEffects {
     return this.enabled;
   }
 
-  // ボタンを押したときの「ポコン！」という気持ちいい音
+  // ボタンを押したときの「ポコン！」
   playButton() {
     if (!this.enabled) return;
     this.init();
@@ -51,7 +51,7 @@ class SoundEffects {
     osc.stop(t + 0.14);
   }
 
-  // 積み木同士がぶつかって合体するときの「ガチャン！」という明るく小気味よい音
+  // たし算：ブロック同士がぶつかって合体する「ガチャン！」
   playMerge(sumValue = 10) {
     if (!this.enabled) return;
     this.init();
@@ -59,7 +59,6 @@ class SoundEffects {
 
     const t = this.ctx.currentTime;
 
-    // 1. 積み木がぶつかる「カチン・ガチャン」というアタック音
     const impactOsc = this.ctx.createOscillator();
     const impactGain = this.ctx.createGain();
     impactOsc.type = 'triangle';
@@ -72,7 +71,6 @@ class SoundEffects {
     impactOsc.start(t);
     impactOsc.stop(t + 0.08);
 
-    // 2. 合体してきらめく倍音チャイム
     const baseFreq = 380 + Math.min(20, sumValue) * 16;
     const freqs = [baseFreq, baseFreq * 1.25, baseFreq * 1.5];
     freqs.forEach((f, i) => {
@@ -93,7 +91,104 @@ class SoundEffects {
     });
   }
 
-  // 正解の「ピンポン！」というチャイム音
+  // ひき算：ブロックが削り取られてポロリと落ちる「カチッ・コロン！」
+  playSubtract() {
+    if (!this.enabled) return;
+    this.init();
+    if (!this.ctx) return;
+
+    const t = this.ctx.currentTime;
+
+    // 削れるカチン音
+    const osc1 = this.ctx.createOscillator();
+    const gain1 = this.ctx.createGain();
+    osc1.type = 'triangle';
+    osc1.frequency.setValueAtTime(620, t);
+    osc1.frequency.exponentialRampToValueAtTime(280, t + 0.07);
+    gain1.gain.setValueAtTime(0.28, t);
+    gain1.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+    osc1.connect(gain1);
+    gain1.connect(this.ctx.destination);
+    osc1.start(t);
+    osc1.stop(t + 0.08);
+
+    // ポロリ音
+    const osc2 = this.ctx.createOscillator();
+    const gain2 = this.ctx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(340, t + 0.06);
+    osc2.frequency.exponentialRampToValueAtTime(480, t + 0.15);
+    gain2.gain.setValueAtTime(0.22, t + 0.06);
+    gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
+    osc2.connect(gain2);
+    gain2.connect(this.ctx.destination);
+    osc2.start(t + 0.06);
+    osc2.stop(t + 0.16);
+  }
+
+  // かけ算：掛け合わされてポンポポン！と倍増する音
+  playMultiply() {
+    if (!this.enabled) return;
+    this.init();
+    if (!this.ctx) return;
+
+    const t = this.ctx.currentTime;
+    const notes = [330, 440, 550, 660];
+    notes.forEach((freq, idx) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      const st = t + idx * 0.045;
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, st);
+      osc.frequency.exponentialRampToValueAtTime(freq * 1.1, st + 0.06);
+
+      gain.gain.setValueAtTime(0.22, st);
+      gain.gain.exponentialRampToValueAtTime(0.001, st + 0.07);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(st);
+      osc.stop(st + 0.07);
+    });
+  }
+
+  // わり算：ブロックがパカッ！と半分・等分に割れる音
+  playDivide() {
+    if (!this.enabled) return;
+    this.init();
+    if (!this.ctx) return;
+
+    const t = this.ctx.currentTime;
+
+    // パカッの破裂音
+    const osc1 = this.ctx.createOscillator();
+    const gain1 = this.ctx.createGain();
+    osc1.type = 'square';
+    osc1.frequency.setValueAtTime(480, t);
+    osc1.frequency.exponentialRampToValueAtTime(140, t + 0.06);
+    gain1.gain.setValueAtTime(0.22, t);
+    gain1.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+    osc1.connect(gain1);
+    gain1.connect(this.ctx.destination);
+    osc1.start(t);
+    osc1.stop(t + 0.07);
+
+    // 割れたあとの余韻
+    const osc2 = this.ctx.createOscillator();
+    const gain2 = this.ctx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(520, t + 0.04);
+    osc2.frequency.exponentialRampToValueAtTime(660, t + 0.16);
+    gain2.gain.setValueAtTime(0.2, t + 0.04);
+    gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+    osc2.connect(gain2);
+    gain2.connect(this.ctx.destination);
+    osc2.start(t + 0.04);
+    osc2.stop(t + 0.18);
+  }
+
+  // 正解「ピンポン！」
   playPinPon() {
     if (!this.enabled) return;
     this.init();
@@ -101,8 +196,8 @@ class SoundEffects {
 
     const t = this.ctx.currentTime;
     const notes = [
-      { freq: 659.25, start: 0.0, dur: 0.22 }, // E5（ピン）
-      { freq: 523.25, start: 0.18, dur: 0.42 } // C5（ポン）
+      { freq: 659.25, start: 0.0, dur: 0.22 },
+      { freq: 523.25, start: 0.18, dur: 0.42 }
     ];
 
     notes.forEach((n) => {
@@ -124,7 +219,7 @@ class SoundEffects {
     });
   }
 
-  // 花丸が押されるときの「ポンッ！」というスタンプ音
+  // 花丸スタンプ「ポンッ！」
   playHanamaru() {
     if (!this.enabled) return;
     this.init();
@@ -149,7 +244,7 @@ class SoundEffects {
     osc.stop(t + 0.16);
   }
 
-  // 「おしい！」のときの優しく温かい木琴風の音（怖くない音）
+  // おしい時の優しい木琴音
   playOshii() {
     if (!this.enabled) return;
     this.init();
@@ -179,7 +274,7 @@ class SoundEffects {
     });
   }
 
-  // 元のブロックに「ポンッ！」と戻るときの軽い音
+  // 元のブロックに戻る音
   playResetPop() {
     if (!this.enabled) return;
     this.init();
@@ -203,7 +298,7 @@ class SoundEffects {
     osc.stop(t + 0.1);
   }
 
-  // 5問クリア（100てんまんてん）時の華やかなファンファーレ
+  // 100てんファンファーレ
   playFanfare() {
     if (!this.enabled) return;
     this.init();

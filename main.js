@@ -1,4 +1,4 @@
-// すうじ つみき（たしざん あそび） メインスクリプト
+// すうじ つみき（たしざん・ひきざん・かけざん・わりざん あそび） メインスクリプト
 (() => {
   const { Engine, World, Bodies, Body, Events } = Matter;
 
@@ -11,6 +11,7 @@
   const btnSound = document.getElementById('btn-sound');
   const questionProgressEl = document.getElementById('question-progress');
   const eqFirstEl = document.getElementById('eq-first');
+  const eqOpEl = document.getElementById('eq-op');
   const eqBlankEl = document.getElementById('eq-blank');
   const eqTargetEl = document.getElementById('eq-target');
   const blackboardMessageEl = document.getElementById('blackboard-message');
@@ -50,10 +51,10 @@
 
   // ゲーム進行状態
   const TOTAL_QUESTIONS = 5;
-  let currentCourse = 'make10'; // 'make10' | 'add10' | 'carry'
+  let currentCourse = 'make10'; // 'make10' | 'add10' | 'carry' | 'sub' | 'mul' | 'div'
   let questionIndex = 0;
   let questions = [];
-  let currentQ = null; // { first, answer, target, choices }
+  let currentQ = null; // { type, op, first, answer, target, choices }
   let solvedHistory = [];
   let isInputLocked = false;
 
@@ -68,16 +69,16 @@
   let trayBodies = [];
   let baseBlock = null;
   let fallingBlock = null;
-  let mergedBlock = null;
+  let transformedBlocks = []; // 変化後・破片・分裂後のブロック群
   let hasTriggeredCollision = false;
 
   // 演出エフェクト
   let confettiList = [];
   let shockwaves = [];
   let floatingTexts = [];
-  let hanamaruStamp = null; // { x, y, scale, targetScale, alpha }
+  let hanamaruStamp = null;
 
-  // タイマー管理（画面遷移時に安全にクリアするため）
+  // タイマー管理
   let activeTimers = [];
   function addTimer(fn, delay) {
     const id = setTimeout(() => {
@@ -93,51 +94,77 @@
     activeTimers = [];
   }
 
-  // 数字に応じた積み木の色を返す
+  // 数字に応じた積み木の色
   function getBlockColor(num) {
+    if (num <= 0) return '#e2e2e2';
     if (num === 10) return '#ffcb77';
     if (num > 10) return '#ffd166';
     return COLORS.blockPalette[(num - 1) % COLORS.blockPalette.length];
   }
 
-  // 数字に応じた積み木のサイズ（幅・高さ）を返す
+  // 数字に応じた積み木のサイズ（幅・高さ）
   function getBlockDimensions(num) {
     const scale = Math.min(1.05, Math.max(0.78, Math.min(stageWidth / 640, stageHeight / 300)));
-    const clamped = Math.max(1, Math.min(20, num));
-    // 数字が大きくなるほど積み木も大きくなる
-    const w = Math.round((78 + clamped * 4.2) * scale);
-    const h = Math.round((68 + clamped * 2.8) * scale);
+    const clamped = Math.max(1, Math.min(25, num));
+    const w = Math.round((74 + clamped * 3.8) * scale);
+    const h = Math.round((64 + clamped * 2.5) * scale);
     return { w, h };
   }
 
-  // コースに応じた5問を生成する
+  // コースに応じた5問を生成
   function generateQuestions(course) {
     const pool = [];
 
     if (course === 'make10') {
-      // 10をつくろう： a + [ ? ] = 10 (a: 1〜9)
+      // 10をつくろう： a ＋ [ ? ] ＝ 10
       for (let a = 1; a <= 9; a++) {
-        pool.push({ first: a, answer: 10 - a, target: 10 });
+        pool.push({ type: 'add', op: '＋', first: a, answer: 10 - a, target: 10 });
       }
     } else if (course === 'add10') {
-      // たしざん（10まで）： a + [ ? ] = target (target: 5〜10)
-      for (let target = 5; target <= 10; target++) {
+      // たしざん（10まで）： a ＋ [ ? ] ＝ target (5〜10)
+      for (let target = 4; target <= 10; target++) {
         for (let a = 1; a < target; a++) {
-          pool.push({ first: a, answer: target - a, target });
+          pool.push({ type: 'add', op: '＋', first: a, answer: target - a, target });
         }
       }
-    } else {
-      // くりあがりの たしざん： a + [ ? ] = target (target: 11〜18, a: 3〜9, answer: 2〜9)
+    } else if (course === 'carry') {
+      // くりあがりの たしざん： a ＋ [ ? ] ＝ target (11〜18)
       for (let a = 3; a <= 9; a++) {
         for (let b = 2; b <= 9; b++) {
           if (a + b >= 11 && a + b <= 18) {
-            pool.push({ first: a, answer: b, target: a + b });
+            pool.push({ type: 'add', op: '＋', first: a, answer: b, target: a + b });
           }
         }
       }
+    } else if (course === 'sub') {
+      // ひきざん： a － [ ? ] ＝ target (a: 4〜10, target: 1〜a-1)
+      for (let a = 4; a <= 10; a++) {
+        for (let target = 1; target < a; target++) {
+          pool.push({ type: 'sub', op: '－', first: a, answer: a - target, target });
+        }
+      }
+    } else if (course === 'mul') {
+      // かけざん（九九のきほん）： a × [ ? ] ＝ target (2〜5の段)
+      for (let a = 2; a <= 5; a++) {
+        for (let b = 2; b <= 5; b++) {
+          pool.push({ type: 'mul', op: '×', first: a, answer: b, target: a * b });
+        }
+      }
+    } else if (course === 'div') {
+      // わりざん（等分）： a ÷ [ ? ] ＝ target (割り切れる問題、answer: 2〜4)
+      const targets = [2, 3, 4, 5];
+      const answers = [2, 3, 4];
+      targets.forEach((tg) => {
+        answers.forEach((ans) => {
+          const a = tg * ans;
+          if (a <= 20) {
+            pool.push({ type: 'div', op: '÷', first: a, answer: ans, target: tg });
+          }
+        });
+      });
     }
 
-    // シャッフルして5問抽出
+    // シャッフル
     for (let i = pool.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       const tmp = pool[i];
@@ -148,30 +175,30 @@
     const selected = pool.slice(0, TOTAL_QUESTIONS);
     return selected.map((q) => ({
       ...q,
-      choices: generateFourChoices(q.answer)
+      choices: generateFourChoices(q.answer, q.type)
     }));
   }
 
-  // 正解を含む4択の数字（昇順で並び替え）を生成
-  function generateFourChoices(correctAnswer) {
+  // 4択ボタンの選択肢生成（正解を含む4つの数字）
+  function generateFourChoices(correctAnswer, qType) {
     const set = new Set([correctAnswer]);
-    // 正解の近くの数字（±1, ±2, ±3）から優先的に候補を作る
-    const offsets = [-2, -1, 1, 2, -3, 3, -4, 4];
+    const offsets = [-1, 1, -2, 2, -3, 3];
     for (const off of offsets) {
       if (set.size >= 4) break;
       const cand = correctAnswer + off;
-      if (cand >= 1 && cand <= 12) {
+      if (cand >= 1 && cand <= 10) {
         set.add(cand);
       }
     }
     while (set.size < 4) {
-      const r = Math.floor(Math.random() * 9) + 1;
+      const maxR = qType === 'mul' || qType === 'div' ? 6 : 9;
+      const r = Math.floor(Math.random() * maxR) + 1;
       set.add(r);
     }
     return Array.from(set).sort((a, b) => a - b);
   }
 
-  // Matter.js 物理エンジンの初期化
+  // Matter.js 初期化
   function initPhysics() {
     engine = Engine.create();
     world = engine.world;
@@ -181,7 +208,7 @@
     Events.on(engine, 'collisionStart', onCollisionStart);
   }
 
-  // キャンバスサイズと木のトレイ（受け皿）の構築
+  // ステージとトレイの構築
   function setupStageGeometry() {
     const rect = stageContainer.getBoundingClientRect();
     stageWidth = Math.max(280, Math.floor(rect.width));
@@ -199,11 +226,10 @@
       trayBodies = [];
     }
 
-    const trayWidth = Math.min(280, Math.round(stageWidth * 0.56));
+    const trayWidth = Math.min(280, Math.round(stageWidth * 0.58));
     const trayThickness = 22;
     const centerX = stageWidth / 2;
 
-    // トレイの底板
     const trayBottom = Bodies.rectangle(
       centerX,
       trayY,
@@ -219,7 +245,6 @@
       }
     );
 
-    // トレイの左右の縁（積み木が外へ転がり落ちないようにする木枠）
     const rimW = 24;
     const rimH = 44;
     const leftRim = Bodies.rectangle(
@@ -256,20 +281,19 @@
     trayBodies = [trayBottom, leftRim, rightRim];
     World.add(world, trayBodies);
 
-    // すでに配置されているブロックがあれば中央に補正
-    const activeBlock = mergedBlock || baseBlock;
-    if (activeBlock && !fallingBlock) {
-      const { h } = getBlockDimensions(activeBlock.numberValue);
-      Body.setPosition(activeBlock, {
+    // すでに配置されているブロックがあれば位置調整
+    if (baseBlock && !fallingBlock && transformedBlocks.length === 0) {
+      const { h } = getBlockDimensions(baseBlock.numberValue);
+      Body.setPosition(baseBlock, {
         x: centerX,
         y: trayY - trayThickness / 2 - h / 2 - 2
       });
-      Body.setVelocity(activeBlock, { x: 0, y: 0 });
-      Body.setAngle(activeBlock, 0);
+      Body.setVelocity(baseBlock, { x: 0, y: 0 });
+      Body.setAngle(baseBlock, 0);
     }
   }
 
-  // すうじ積み木ボディを作成
+  // すうじ積み木ボディの生成
   function createNumberBlock(x, y, num, isFalling = false) {
     const { w, h } = getBlockDimensions(num);
     const block = Bodies.rectangle(x, y, w, h, {
@@ -289,20 +313,20 @@
     return block;
   }
 
-  // ステージ上の積み木をすべてクリア
+  // ステージ上の全ブロックをクリア
   function clearBlocks() {
-    [baseBlock, fallingBlock, mergedBlock].forEach((b) => {
-      if (b) {
-        World.remove(world, b);
-      }
+    if (baseBlock) World.remove(world, baseBlock);
+    if (fallingBlock) World.remove(world, fallingBlock);
+    transformedBlocks.forEach((b) => {
+      if (b) World.remove(world, b);
     });
     baseBlock = null;
     fallingBlock = null;
-    mergedBlock = null;
+    transformedBlocks = [];
     hasTriggeredCollision = false;
   }
 
-  // トレイの上に最初の数字の積み木を配置
+  // トレイの上に最初の数字のブロックを配置
   function spawnBaseBlock(num) {
     clearBlocks();
     const { h } = getBlockDimensions(num);
@@ -311,7 +335,7 @@
     baseBlock = createNumberBlock(centerX, startY, num, false);
   }
 
-  // コースを開始する
+  // コース開始
   function startCourse(course) {
     clearAllTimers();
     currentCourse = course;
@@ -327,7 +351,7 @@
     loadQuestion(0);
   }
 
-  // 指定番号の問題を黒板・トレイ・4択ボタンにセット
+  // 問題読み込み
   function loadQuestion(idx) {
     clearAllTimers();
     questionIndex = idx;
@@ -335,18 +359,24 @@
     isInputLocked = false;
     hanamaruStamp = null;
 
-    // 1. 黒板の表示更新
+    // 1. 黒板表示更新
     questionProgressEl.textContent = `だい ${idx + 1} もん / ${TOTAL_QUESTIONS} もん`;
     eqFirstEl.textContent = String(currentQ.first);
+    eqOpEl.textContent = currentQ.op;
     eqBlankEl.textContent = '？';
     eqBlankEl.className = 'eq-blank';
     eqTargetEl.textContent = String(currentQ.target);
 
-    blackboardMessageEl.textContent = `したの すうじを おして ${currentQ.target}を つくろう！`;
+    let opText = 'たしざん';
+    if (currentQ.type === 'sub') opText = 'ひきざん';
+    else if (currentQ.type === 'mul') opText = 'かけざん';
+    else if (currentQ.type === 'div') opText = 'わりざん';
+
+    blackboardMessageEl.textContent = `したの すうじを おして ${currentQ.target}に しよう！`;
     blackboardMessageEl.className = 'blackboard-message';
     choicesLabelEl.textContent = 'どの すうじを いれる？ えらんで おしてね！';
 
-    // 2. 下部の4択ボタン更新（数字＋ドット）
+    // 2. 下部4択ボタン更新
     choiceBtns.forEach((btn, i) => {
       const val = currentQ.choices[i];
       btn.dataset.value = String(val);
@@ -362,11 +392,11 @@
       btn.innerHTML = `<span>${val}</span>${dotsHtml}`;
     });
 
-    // 3. トレイの上に最初の数字の積み木を配置
+    // 3. トレイ上に最初のブロックをセット
     spawnBaseBlock(currentQ.first);
   }
 
-  // プレイヤーが下の4択ボタンを1つタップしたときの処理
+  // 4択ボタン選択時の処理
   function onChoiceSelected(pickedNum, btnElement) {
     if (isInputLocked || !currentQ) return;
     isInputLocked = true;
@@ -380,10 +410,8 @@
       btnElement.classList.add('is-pressed');
     }
 
-    // 黒板の [ ？ ] に選んだ数字を仮表示
     eqBlankEl.textContent = String(pickedNum);
 
-    // 真上から選んだ数字の物理ブロックを落下させる
     const { h } = getBlockDimensions(pickedNum);
     const dropX = stageWidth / 2;
     const dropY = Math.max(28, h / 2 + 6);
@@ -393,7 +421,7 @@
     Body.setVelocity(fallingBlock, { x: 0, y: 2.2 });
   }
 
-  // Matter.js 衝突イベント：落ちてきたブロックと下のブロックがぶつかったら合体予約
+  // 衝突検知
   function onCollisionStart(event) {
     if (hasTriggeredCollision || !fallingBlock || !baseBlock) return;
 
@@ -406,22 +434,27 @@
 
       if (isPairMatch) {
         hasTriggeredCollision = true;
-        // ぶつかって少しバウンドする物理挙動を見せてから「ガチャン！」と合体させる
         addTimer(() => {
-          performMerge();
+          performOperation();
         }, 130);
         break;
       }
     }
   }
 
-  // 2つの積み木が「ガチャン！」と合体して1つの大きな積み木に変化する処理
-  function performMerge() {
+  // 演算（足し算・引き算・掛け算・割り算）の物理演出実行
+  function performOperation() {
     if (!baseBlock || !fallingBlock || !currentQ) return;
 
     const firstVal = baseBlock.numberValue;
     const pickedVal = fallingBlock.numberValue;
-    const sumVal = firstVal + pickedVal;
+    const op = currentQ.type;
+
+    let resultVal = 0;
+    if (op === 'add') resultVal = firstVal + pickedVal;
+    else if (op === 'sub') resultVal = firstVal - pickedVal;
+    else if (op === 'mul') resultVal = firstVal * pickedVal;
+    else if (op === 'div') resultVal = Math.floor(firstVal / pickedVal);
 
     const midX = stageWidth / 2;
     const midY = (baseBlock.position.y + fallingBlock.position.y) / 2;
@@ -431,52 +464,112 @@
     baseBlock = null;
     fallingBlock = null;
 
-    // 合体した新しい大きな積み木を生成
-    mergedBlock = createNumberBlock(midX, midY, sumVal, false);
-    mergedBlock.popScale = 0.65;
-    Body.setVelocity(mergedBlock, { x: 0, y: -3.2 });
+    if (op === 'add') {
+      // 【たし算】合体して1つの大きなブロックに
+      const merged = createNumberBlock(midX, midY, resultVal, false);
+      merged.popScale = 0.65;
+      Body.setVelocity(merged, { x: 0, y: -3.2 });
+      transformedBlocks = [merged];
 
-    // 合体音「ガチャン！」
-    window.se.playMerge(sumVal);
+      window.se.playMerge(resultVal);
 
-    // 合体波紋エフェクト
-    shockwaves.push({
-      x: midX,
-      y: midY,
-      r: 25,
-      maxR: 110,
-      alpha: 1.0,
-      color: sumVal === currentQ.target ? '#2a9d8f' : '#e76f51'
-    });
+      shockwaves.push({
+        x: midX,
+        y: midY,
+        r: 25,
+        maxR: 110,
+        alpha: 1.0,
+        color: resultVal === currentQ.target ? '#2a9d8f' : '#e76f51'
+      });
+    } else if (op === 'sub') {
+      // 【ひきざん】削り取り演出：引いた分（pickedVal）が右にポロリと落ちて、残りがトレイに残る
+      const remVal = Math.max(0, resultVal);
+      const remainBlock = createNumberBlock(midX, midY, remVal, false);
+      Body.setVelocity(remainBlock, { x: -1, y: -2 });
 
-    // 正解・不正解の分岐
-    if (sumVal === currentQ.target) {
-      handleCorrectAnswer(firstVal, pickedVal, sumVal);
+      // 削り取られた破片ブロック（右へ弾け飛ぶ）
+      const scrap = createNumberBlock(midX + 35, midY - 10, pickedVal, false);
+      scrap.popScale = 0.75;
+      Body.setVelocity(scrap, { x: 4.8, y: -3.8 });
+      Body.setAngularVelocity(scrap, 0.15);
+
+      transformedBlocks = [remainBlock, scrap];
+      window.se.playSubtract();
+
+      shockwaves.push({
+        x: midX,
+        y: midY,
+        r: 20,
+        maxR: 90,
+        alpha: 1.0,
+        color: resultVal === currentQ.target ? '#2a9d8f' : '#a0c4ff'
+      });
+    } else if (op === 'mul') {
+      // 【かけざん】増殖・変形演出：倍増して特大ブロックに変化
+      const mulBlock = createNumberBlock(midX, midY, resultVal, false);
+      mulBlock.popScale = 0.55;
+      Body.setVelocity(mulBlock, { x: 0, y: -4.0 });
+      transformedBlocks = [mulBlock];
+
+      window.se.playMultiply();
+
+      shockwaves.push({
+        x: midX,
+        y: midY,
+        r: 30,
+        maxR: 130,
+        alpha: 1.0,
+        color: resultVal === currentQ.target ? '#2a9d8f' : '#ffd166'
+      });
+    } else if (op === 'div') {
+      // 【わりざん】等分・真っ二つ演出：パカッと左右に割れ、片方が答えとして残る
+      const halfW = getBlockDimensions(resultVal).w;
+      const leftPart = createNumberBlock(midX - halfW * 0.4, midY, resultVal, false);
+      const rightPart = createNumberBlock(midX + halfW * 0.4, midY, resultVal, false);
+
+      Body.setVelocity(leftPart, { x: -2.8, y: -3.0 });
+      Body.setVelocity(rightPart, { x: 2.8, y: -3.0 });
+      Body.setAngularVelocity(leftPart, -0.08);
+      Body.setAngularVelocity(rightPart, 0.08);
+
+      transformedBlocks = [leftPart, rightPart];
+      window.se.playDivide();
+
+      shockwaves.push({
+        x: midX,
+        y: midY,
+        r: 20,
+        maxR: 100,
+        alpha: 1.0,
+        color: resultVal === currentQ.target ? '#2a9d8f' : '#ffc6ff'
+      });
+    }
+
+    // 正解・おしい判定
+    if (resultVal === currentQ.target) {
+      handleCorrectAnswer(firstVal, pickedVal, resultVal);
     } else {
-      handleWrongAnswer(firstVal, pickedVal, sumVal);
+      handleWrongAnswer(firstVal, pickedVal, resultVal);
     }
   }
 
-  // 【正解のとき】
-  function handleCorrectAnswer(firstVal, pickedVal, sumVal) {
+  // 正解時の処理
+  function handleCorrectAnswer(firstVal, pickedVal, resultVal) {
     eqBlankEl.className = 'eq-blank is-filled-correct';
-    blackboardMessageEl.textContent = `${firstVal} ＋ ${pickedVal} ＝ ${sumVal}　せいかい！`;
+    blackboardMessageEl.textContent = `${firstVal} ${currentQ.op} ${pickedVal} ＝ ${resultVal}　せいかい！`;
     blackboardMessageEl.className = 'blackboard-message is-correct';
-    choicesLabelEl.textContent = 'やったね！ ぴったり がったい できたよ！';
+    choicesLabelEl.textContent = 'やったね！ ぴったり へんしん できたよ！';
 
     solvedHistory.push({
       first: firstVal,
+      op: currentQ.op,
       answer: pickedVal,
-      target: sumVal
+      target: resultVal
     });
 
-    // 正解音「ピンポン！」
     window.se.playPinPon();
-
-    // カラフルな紙吹雪を舞わせる
     spawnConfetti(stageWidth / 2, stageHeight * 0.45, 52);
 
-    // 少し遅らせて大きな赤い「はなまる」をポンッ！と押す
     addTimer(() => {
       window.se.playHanamaru();
       hanamaruStamp = {
@@ -488,7 +581,6 @@
       };
     }, 180);
 
-    // 1.5秒後に自動で次の問題へ進む（5問クリアなら100てん画面へ）
     addTimer(() => {
       if (questionIndex + 1 < TOTAL_QUESTIONS) {
         loadQuestion(questionIndex + 1);
@@ -498,18 +590,25 @@
     }, 1500);
   }
 
-  // 【間違えたとき（おしい！の学習ギミック）】
-  function handleWrongAnswer(firstVal, pickedVal, sumVal) {
+  // 間違えたとき（おしい！のヒント提示）
+  function handleWrongAnswer(firstVal, pickedVal, resultVal) {
     const targetVal = currentQ.target;
+    const op = currentQ.type;
     eqBlankEl.className = 'eq-blank is-filled-wrong';
 
     let hintText = '';
-    if (sumVal < targetVal) {
-      const diff = targetVal - sumVal;
-      hintText = `おしい！ ${firstVal} ＋ ${pickedVal} は ${sumVal} だね（${targetVal}まで あと ${diff} たりないよ！）`;
-    } else {
-      const diff = sumVal - targetVal;
-      hintText = `おしい！ ${firstVal} ＋ ${pickedVal} は ${sumVal} になっちゃった！（${diff} おおきいね）`;
+    if (op === 'add') {
+      if (resultVal < targetVal) {
+        hintText = `おしい！ ${firstVal} ＋ ${pickedVal} は ${resultVal} だね（あと ${targetVal - resultVal} たりないよ！）`;
+      } else {
+        hintText = `おしい！ ${firstVal} ＋ ${pickedVal} は ${resultVal} になっちゃった！（${resultVal - targetVal} おおきいね）`;
+      }
+    } else if (op === 'sub') {
+      hintText = `おしい！ ${firstVal} － ${pickedVal} は ${resultVal} だね（めざすのは ${targetVal} だよ！）`;
+    } else if (op === 'mul') {
+      hintText = `おしい！ ${firstVal} × ${pickedVal} は ${resultVal} だね（めざすのは ${targetVal} だよ！）`;
+    } else if (op === 'div') {
+      hintText = `おしい！ ${firstVal} ÷ ${pickedVal} は ${resultVal} だね（めざすのは ${targetVal} だよ！）`;
     }
 
     blackboardMessageEl.textContent = hintText;
@@ -518,29 +617,30 @@
 
     window.se.playOshii();
 
-    // ステージ上にも合計がいくつになったか吹き出しを表示
     floatingTexts.push({
       x: stageWidth / 2,
       y: Math.max(46, stageHeight * 0.22),
-      text: `${firstVal} ＋ ${pickedVal} ＝ ${sumVal}`,
+      text: `${firstVal} ${currentQ.op} ${pickedVal} ＝ ${resultVal}`,
       color: '#e76f51',
       life: 1.0
     });
 
-    // 1秒後に「ポンッ！」と元の最初の数字のブロック1個に戻し、ボタンを選び直せるようにする
+    // 1秒後に元の最初のブロックに戻す
     addTimer(() => {
       window.se.playResetPop();
 
-      if (mergedBlock) {
-        shockwaves.push({
-          x: mergedBlock.position.x,
-          y: mergedBlock.position.y,
-          r: 20,
-          maxR: 75,
-          alpha: 0.9,
-          color: COLORS.navy
-        });
-      }
+      transformedBlocks.forEach((b) => {
+        if (b) {
+          shockwaves.push({
+            x: b.position.x,
+            y: b.position.y,
+            r: 18,
+            maxR: 65,
+            alpha: 0.8,
+            color: COLORS.navy
+          });
+        }
+      });
 
       spawnBaseBlock(firstVal);
       eqBlankEl.textContent = '？';
@@ -551,10 +651,10 @@
         b.classList.remove('is-pressed');
       });
       isInputLocked = false;
-    }, 1000);
+    }, 1100);
   }
 
-  // 5問クリア時の「100てん まんてん！」画面を表示
+  // 100てん満点画面
   function showResultScreen() {
     window.se.playFanfare();
 
@@ -564,7 +664,7 @@
       li.className = 'review-item';
       li.innerHTML = `
         <span class="review-num-badge">だい ${idx + 1} もん</span>
-        <span class="review-eq">${item.first} ＋ ${item.answer} ＝ ${item.target}</span>
+        <span class="review-eq">${item.first} ${item.op} ${item.answer} ＝ ${item.target}</span>
         <span class="review-mark">せいかい</span>
       `;
       reviewListEl.appendChild(li);
@@ -574,7 +674,7 @@
     resultOverlay.setAttribute('aria-hidden', 'false');
   }
 
-  // 紙吹雪パーティクル生成
+  // 紙吹雪パーティクル
   function spawnConfetti(x, y, count) {
     const palette = [
       '#e63946',
@@ -583,7 +683,7 @@
       '#2a9d8f',
       '#88d49e',
       '#a0c4ff',
-      '#ffadad'
+      '#ffc6ff'
     ];
     for (let i = 0; i < count; i++) {
       const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.4;
@@ -604,7 +704,7 @@
     }
   }
 
-  // 角丸長方形パス補助関数
+  // 角丸長方形パス
   function roundRect(context, x, y, w, h, r) {
     const radius = Math.min(r, w / 2, h / 2);
     context.beginPath();
@@ -616,7 +716,7 @@
     context.closePath();
   }
 
-  // 木のトレイ（受け皿）の描画
+  // 木のトレイ描画
   function drawWoodenTray() {
     ctx.save();
     for (const b of trayBodies) {
@@ -628,12 +728,10 @@
       ctx.translate(x, y);
       ctx.rotate(b.angle);
 
-      // 立体影
       ctx.fillStyle = COLORS.navy;
       roundRect(ctx, -w / 2, -h / 2 + 4, w, h, 8);
       ctx.fill();
 
-      // 木枠本体
       ctx.fillStyle = b.label === 'trayBottom' ? COLORS.trayWood : COLORS.trayRim;
       ctx.strokeStyle = COLORS.navy;
       ctx.lineWidth = 3;
@@ -646,7 +744,7 @@
     ctx.restore();
   }
 
-  // すうじ積み木（数字＋●ドット）の描画
+  // すうじ積み木描画
   function drawNumberBlock(block) {
     if (!block) return;
 
@@ -663,12 +761,10 @@
     ctx.translate(x, y);
     ctx.rotate(block.angle * 0.35);
 
-    // 立体影（ぼかさないシルエット影）
     ctx.fillStyle = COLORS.navy;
     roundRect(ctx, -w / 2, -h / 2 + 5, w, h, 14);
     ctx.fill();
 
-    // 積み木本体
     ctx.fillStyle = getBlockColor(num);
     ctx.strokeStyle = COLORS.navy;
     ctx.lineWidth = 3.5;
@@ -676,7 +772,6 @@
     ctx.fill();
     ctx.stroke();
 
-    // 上部の白いハイライトライン
     ctx.beginPath();
     ctx.moveTo(-w / 2 + 14, -h / 2 + 6);
     ctx.lineTo(w / 2 - 14, -h / 2 + 6);
@@ -685,7 +780,6 @@
     ctx.lineCap = 'round';
     ctx.stroke();
 
-    // 数字テキスト（上部〜中央）
     const fontSize = Math.round(Math.min(w, h) * 0.46);
     ctx.font = `800 ${fontSize}px 'M PLUS Rounded 1c', sans-serif`;
     ctx.textAlign = 'center';
@@ -693,17 +787,17 @@
     ctx.fillStyle = COLORS.navy;
     ctx.fillText(String(num), 0, -h * 0.16);
 
-    // 数字の下に数の分だけ「●（ドット）」を5個ずつ並べて描画
     drawBlockDots(ctx, num, w, h);
 
     ctx.restore();
   }
 
-  // 積み木内の「●（ドット）」描画（5個ずつのまとまりで低学年が数えやすい配置）
+  // 積み木内の●ドット描画
   function drawBlockDots(context, num, w, h) {
+    if (num <= 0) return;
     const maxCols = 5;
     const rows = Math.ceil(num / maxCols);
-    const dotRadius = Math.max(3.0, Math.min(5.2, Math.min(w, h) * 0.058));
+    const dotRadius = Math.max(2.8, Math.min(5.0, Math.min(w, h) * 0.055));
     const colGap = dotRadius * 2.75;
     const rowGap = dotRadius * 2.45;
     const startY = h * 0.15 - ((rows - 1) * rowGap) * 0.25;
@@ -720,7 +814,6 @@
         const dotIndex = r * maxCols + c;
         context.beginPath();
         context.arc(x, y, dotRadius, 0, Math.PI * 2);
-        // 10個目まではネイビー、11個目以降は赤にして「10とあといくつ」を視覚化
         context.fillStyle = dotIndex >= 10 ? COLORS.hanamaruRed : COLORS.navy;
         context.fill();
       }
@@ -728,7 +821,7 @@
     }
   }
 
-  // Canvas上で大きな赤い「はなまる」を描画
+  // はなまる描画
   function drawCanvasHanamaru() {
     if (!hanamaruStamp) return;
 
@@ -742,7 +835,6 @@
     ctx.scale(scale, scale);
     ctx.rotate(-0.1);
 
-    // 花びら（10枚）の描画
     const petals = 10;
     ctx.beginPath();
     for (let i = 0; i < petals; i++) {
@@ -770,12 +862,10 @@
     ctx.lineJoin = 'round';
     ctx.stroke();
 
-    // 内側の丸
     ctx.beginPath();
     ctx.arc(0, 0, baseR * 0.68, 0, Math.PI * 2);
     ctx.stroke();
 
-    // 中央の渦巻き＋「せいかい」文字
     ctx.font = `800 ${Math.round(baseR * 0.36)}px 'M PLUS Rounded 1c', sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -785,7 +875,7 @@
     ctx.restore();
   }
 
-  // エフェクト（波紋・紙吹雪・吹き出しテキスト・はなまる）の描画と更新
+  // エフェクト描画
   function drawAndUpdateEffects() {
     // 1. 波紋
     for (let i = shockwaves.length - 1; i >= 0; i--) {
@@ -806,7 +896,7 @@
       ctx.restore();
     }
 
-    // 2. 紙吹雪パーティクル
+    // 2. 紙吹雪
     for (let i = confettiList.length - 1; i >= 0; i--) {
       const p = confettiList[i];
       p.x += p.vx;
@@ -869,11 +959,11 @@
       ctx.restore();
     }
 
-    // 4. 大きな赤いはなまるスタンプ
+    // 4. はなまる
     drawCanvasHanamaru();
   }
 
-  // メイン描画＆物理更新ループ
+  // メインループ
   let lastTime = performance.now();
   function gameLoop(now) {
     const delta = Math.min(24, now - lastTime);
@@ -881,23 +971,21 @@
 
     Engine.update(engine, delta);
 
-    // 落ちてくるブロックが万一トレイ上で静止しても衝突イベントが発火しなかった場合の安全フォールバック
+    // フォールバック衝突判定
     if (fallingBlock && baseBlock && !hasTriggeredCollision) {
       const dy = Math.abs(fallingBlock.position.y - baseBlock.position.y);
       const combinedHalfH = (fallingBlock.customH + baseBlock.customH) / 2;
       if (dy <= combinedHalfH + 6) {
         hasTriggeredCollision = true;
         addTimer(() => {
-          performMerge();
+          performOperation();
         }, 120);
       }
     }
 
-    // 背景描画（明るいクリーム・画用紙色）
     ctx.fillStyle = COLORS.bg;
     ctx.fillRect(0, 0, stageWidth, stageHeight);
 
-    // ノート風のやさしい方眼ドット
     ctx.fillStyle = 'rgba(44, 62, 80, 0.08)';
     const step = 32;
     for (let gx = step; gx < stageWidth; gx += step) {
@@ -908,21 +996,20 @@
       }
     }
 
-    // 木のトレイ（受け皿）描画
     drawWoodenTray();
 
-    // 積み木描画
     if (baseBlock) drawNumberBlock(baseBlock);
     if (fallingBlock) drawNumberBlock(fallingBlock);
-    if (mergedBlock) drawNumberBlock(mergedBlock);
+    transformedBlocks.forEach((b) => {
+      if (b) drawNumberBlock(b);
+    });
 
-    // エフェクト・はなまる描画
     drawAndUpdateEffects();
 
     requestAnimationFrame(gameLoop);
   }
 
-  // イベントリスナー登録
+  // イベントリスナー
   choiceBtns.forEach((btn) => {
     btn.addEventListener('click', () => {
       const val = Number(btn.dataset.value);
@@ -969,7 +1056,7 @@
     setupStageGeometry();
   });
 
-  // 初期化してループ開始（初期状態はコース選択オーバーレイを表示しつつ背景にステージを準備）
+  // 初期起動
   initPhysics();
   questions = generateQuestions('make10');
   loadQuestion(0);
