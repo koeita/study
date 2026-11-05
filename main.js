@@ -1,4 +1,4 @@
-// すうじ つみき（たしざん・ひきざん・かけざん・わりざん 難易度＆問題数選択対応） メインスクリプト
+// すうじ つみき（やりこみ要素：つみき図鑑・メダル実績・つみき広場対応） メインスクリプト
 (() => {
   const { Engine, World, Bodies, Body, Events } = Matter;
 
@@ -11,6 +11,7 @@
   const btnSound = document.getElementById('btn-sound');
   const levelBadgeEl = document.getElementById('level-badge');
   const questionProgressEl = document.getElementById('question-progress');
+  const equationRowEl = document.getElementById('equation-row');
   const eqPartAEl = document.getElementById('eq-part-a');
   const eqOpEl = document.getElementById('eq-op');
   const eqPartBEl = document.getElementById('eq-part-b');
@@ -19,9 +20,24 @@
   const choicesLabelEl = document.getElementById('choices-label');
   const choicesGridEl = document.getElementById('choices-grid');
   const choiceBtns = Array.from(choicesGridEl.querySelectorAll('.choice-btn'));
+  const sandboxControlsEl = document.getElementById('sandbox-controls');
+  const sandboxToySelectorEl = document.getElementById('sandbox-toy-selector');
+  const btnSandboxClear = document.getElementById('btn-sandbox-clear');
 
   const titleOverlay = document.getElementById('title-overlay');
   const resultOverlay = document.getElementById('result-overlay');
+  const zukanOverlay = document.getElementById('zukan-overlay');
+  const zukanGridEl = document.getElementById('zukan-grid');
+  const zukanTotalCollectedEl = document.getElementById('zukan-total-collected');
+  const zukanBadgeCountEl = document.getElementById('zukan-badge-count');
+  const btnOpenZukan = document.getElementById('btn-open-zukan');
+  const btnCloseZukan = document.getElementById('btn-close-zukan');
+  const btnOpenSandbox = document.getElementById('btn-open-sandbox');
+
+  const rewardBannerEl = document.getElementById('reward-banner');
+  const rewardIconBoxEl = document.getElementById('reward-icon-box');
+  const rewardNameEl = document.getElementById('reward-name');
+
   const resultStampWrapEl = document.getElementById('result-stamp-wrap');
   const resultTitleEl = document.getElementById('result-title');
   const resultSubtitleEl = document.getElementById('result-subtitle');
@@ -37,6 +53,11 @@
   const previewSub = document.getElementById('preview-sub');
   const previewMul = document.getElementById('preview-mul');
   const previewDiv = document.getElementById('preview-div');
+
+  const badgeAdd = document.getElementById('badge-add');
+  const badgeSub = document.getElementById('badge-sub');
+  const badgeMul = document.getElementById('badge-mul');
+  const badgeDiv = document.getElementById('badge-div');
 
   // 配色パレット
   const COLORS = {
@@ -61,17 +82,66 @@
     ]
   };
 
-  // 難易度表示ラベル
   const LEVEL_NAMES = {
     easy: 'かんたん',
     normal: 'ふつう',
     hard: 'むずかしい'
   };
 
+  // =========================================
+  // やりこみ要素：特別つみき図鑑データ（全12種）
+  // =========================================
+  const TOY_CATALOG = [
+    { id: 'dog', name: 'いぬ', color: '#ffd6a5', shape: 'dog' },
+    { id: 'cat', name: 'ねこ', color: '#ffadad', shape: 'cat' },
+    { id: 'bear', name: 'くま', color: '#d4a373', shape: 'bear' },
+    { id: 'rabbit', name: 'うさぎ', color: '#ffc6ff', shape: 'rabbit' },
+    { id: 'car', name: 'くるま', color: '#a0c4ff', shape: 'car' },
+    { id: 'train', name: 'でんしゃ', color: '#88d49e', shape: 'train' },
+    { id: 'plane', name: 'ひこうき', color: '#caffbf', shape: 'plane' },
+    { id: 'rocket', name: 'ロケット', color: '#fdffb6', shape: 'rocket' },
+    { id: 'apple', name: 'りんご', color: '#fe6d73', shape: 'apple' },
+    { id: 'star', name: 'ほし', color: '#f4d06f', shape: 'star' },
+    { id: 'castle', name: 'おしろ', color: '#e6ccb2', shape: 'castle' },
+    { id: 'crown', name: 'おうかん', color: '#f4a261', shape: 'crown' }
+  ];
+
+  // セーブデータ管理（localStorage）
+  const SAVE_KEY = 'suuji_tsumiki_save_v1';
+  let saveData = {
+    medals: {}, // e.g. { 'add_easy': true, 'mul_hard': true }
+    unlockedToys: ['dog'], // 初期状態で1個解放
+    totalClears: 0,
+    perfectClears: 0
+  };
+
+  function loadSaveData() {
+    try {
+      const json = localStorage.getItem(SAVE_KEY);
+      if (json) {
+        const loaded = JSON.parse(json);
+        saveData = { ...saveData, ...loaded };
+      }
+    } catch (e) {
+      console.warn('saveData load failed', e);
+    }
+  }
+
+  function saveGameData() {
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
+    } catch (e) {
+      console.warn('saveGameData failed', e);
+    }
+    updateZukanUI();
+    updateMedalBadges();
+  }
+
   // ゲーム進行状態
-  let totalQuestions = 5; // 3 | 5 | 10
-  let currentLevel = 'easy'; // 'easy' | 'normal' | 'hard'
-  let currentCourse = 'add'; // 'add' | 'sub' | 'mul' | 'div'
+  let totalQuestions = 5;
+  let currentLevel = 'easy';
+  let currentCourse = 'add';
+  let isSandboxMode = false;
   let questionIndex = 0;
   let questions = [];
   let currentQ = null;
@@ -90,6 +160,7 @@
   let baseBlock = null;
   let fallingBlock = null;
   let transformedBlocks = [];
+  let sandboxBodies = [];
   let hasTriggeredCollision = false;
 
   // 演出エフェクト
@@ -131,7 +202,7 @@
     return { w, h };
   }
 
-  // 難易度変更時のコースプレビュー表記更新
+  // プレビュー＆メダルバッジ更新
   function updateCoursePreviews() {
     if (currentLevel === 'easy') {
       previewAdd.textContent = '4 ＋ [ ？ ] ＝ 10';
@@ -149,9 +220,164 @@
       previewMul.textContent = '7 × [ ？ ] ＝ 56';
       previewDiv.textContent = '24 ÷ [ ？ ] ＝ 6';
     }
+    updateMedalBadges();
   }
 
-  // 難易度・コース・問題数に応じた問題プール生成
+  // 各コースの獲得メダル表示（現在選択中の難易度で満点を取っているか）
+  function updateMedalBadges() {
+    const courses = ['add', 'sub', 'mul', 'div'];
+    const badgeMap = { add: badgeAdd, sub: badgeSub, mul: badgeMul, div: badgeDiv };
+
+    courses.forEach((c) => {
+      const el = badgeMap[c];
+      const key = `${c}_${currentLevel}`;
+      if (saveData.medals[key]) {
+        el.textContent = 'きんメダル';
+        el.classList.add('is-visible');
+      } else {
+        el.textContent = '';
+        el.classList.remove('is-visible');
+      }
+    });
+  }
+
+  // 図鑑UIの更新
+  function updateZukanUI() {
+    const unlockedCount = saveData.unlockedToys.length;
+    zukanBadgeCountEl.textContent = String(unlockedCount);
+    zukanTotalCollectedEl.textContent = String(unlockedCount);
+
+    zukanGridEl.innerHTML = '';
+    TOY_CATALOG.forEach((toy) => {
+      const isUnlocked = saveData.unlockedToys.includes(toy.id);
+      const card = document.createElement('div');
+      card.className = `zukan-item ${isUnlocked ? '' : 'is-locked'}`;
+
+      const iconSvg = generateToySVG(toy, isUnlocked);
+      card.innerHTML = `
+        <div class="zukan-icon-wrap">${iconSvg}</div>
+        <span class="zukan-item-name">${isUnlocked ? toy.name : '？？？'}</span>
+      `;
+      zukanGridEl.appendChild(card);
+    });
+
+    updateSandboxToySelector();
+  }
+
+  // 広場用積み木セレクターの更新
+  function updateSandboxToySelector() {
+    sandboxToySelectorEl.innerHTML = '';
+    // 解放されたおもちゃ積み木ボタン
+    saveData.unlockedToys.forEach((toyId) => {
+      const toy = TOY_CATALOG.find((t) => t.id === toyId);
+      if (!toy) return;
+      const btn = document.createElement('button');
+      btn.className = 'toy-drop-btn';
+      btn.type = 'button';
+      btn.innerHTML = `<span>${toy.name}</span>`;
+      btn.addEventListener('click', () => {
+        window.se.playButton();
+        dropToyInSandbox(toy);
+      });
+      sandboxToySelectorEl.appendChild(btn);
+    });
+
+    // 好きな数字も落とせるように数字ブロックボタン（1〜10）
+    [1, 2, 3, 4, 5, 10].forEach((n) => {
+      const btn = document.createElement('button');
+      btn.className = 'toy-drop-btn';
+      btn.type = 'button';
+      btn.innerHTML = `<span>[ ${n} ]</span>`;
+      btn.addEventListener('click', () => {
+        window.se.playButton();
+        dropNumberInSandbox(n);
+      });
+      sandboxToySelectorEl.appendChild(btn);
+    });
+  }
+
+  // 積み木アイコンSVGの生成
+  function generateToySVG(toy, isUnlocked) {
+    const color = isUnlocked ? toy.color : '#aaaaaa';
+    const stroke = COLORS.navy;
+
+    if (toy.shape === 'dog') {
+      return `
+        <svg viewBox="0 0 60 60" width="100%" height="100%">
+          <rect x="12" y="16" width="36" height="32" rx="8" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+          <circle cx="16" cy="18" r="8" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+          <circle cx="44" cy="18" r="8" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+          <circle cx="23" cy="30" r="3" fill="${stroke}"/>
+          <circle cx="37" cy="30" r="3" fill="${stroke}"/>
+          <ellipse cx="30" cy="38" rx="5" ry="3.5" fill="${stroke}"/>
+        </svg>
+      `;
+    } else if (toy.shape === 'cat') {
+      return `
+        <svg viewBox="0 0 60 60" width="100%" height="100%">
+          <polygon points="14,14 24,24 10,28" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+          <polygon points="46,14 36,24 50,28" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+          <rect x="12" y="20" width="36" height="30" rx="10" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+          <circle cx="23" cy="32" r="3" fill="${stroke}"/>
+          <circle cx="37" cy="32" r="3" fill="${stroke}"/>
+          <polygon points="30,38 27,42 33,42" fill="${stroke}"/>
+        </svg>
+      `;
+    } else if (toy.shape === 'car') {
+      return `
+        <svg viewBox="0 0 60 60" width="100%" height="100%">
+          <rect x="10" y="26" width="40" height="18" rx="4" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+          <rect x="18" y="16" width="24" height="12" rx="4" fill="#ffffff" stroke="${stroke}" stroke-width="3"/>
+          <circle cx="18" cy="45" r="6" fill="${stroke}"/>
+          <circle cx="42" cy="45" r="6" fill="${stroke}"/>
+        </svg>
+      `;
+    } else if (toy.shape === 'star') {
+      return `
+        <svg viewBox="0 0 60 60" width="100%" height="100%">
+          <polygon points="30,8 36,22 51,24 40,34 43,49 30,41 17,49 20,34 9,24 24,22" fill="${color}" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/>
+        </svg>
+      `;
+    } else if (toy.shape === 'apple') {
+      return `
+        <svg viewBox="0 0 60 60" width="100%" height="100%">
+          <rect x="28" y="8" width="4" height="10" rx="2" fill="#8b5a2b" stroke="${stroke}" stroke-width="2"/>
+          <circle cx="24" cy="34" r="16" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+          <circle cx="36" cy="34" r="16" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        </svg>
+      `;
+    } else if (toy.shape === 'rocket') {
+      return `
+        <svg viewBox="0 0 60 60" width="100%" height="100%">
+          <path d="M 30 8 Q 42 24 40 44 L 20 44 Q 18 24 30 8 Z" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+          <polygon points="16,36 10,48 20,44" fill="#ffadad" stroke="${stroke}" stroke-width="3"/>
+          <polygon points="44,36 50,48 40,44" fill="#ffadad" stroke="${stroke}" stroke-width="3"/>
+          <circle cx="30" cy="26" r="5" fill="#ffffff" stroke="${stroke}" stroke-width="2.5"/>
+        </svg>
+      `;
+    } else {
+      // 共通積み木ブロック
+      return `
+        <svg viewBox="0 0 60 60" width="100%" height="100%">
+          <rect x="12" y="14" width="36" height="34" rx="8" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+          <circle cx="30" cy="31" r="9" fill="#ffffff" stroke="${stroke}" stroke-width="3"/>
+        </svg>
+      `;
+    }
+  }
+
+  // 未解放の積み木を1つランダムに選んで解放
+  function awardNewToy() {
+    const lockedToys = TOY_CATALOG.filter((t) => !saveData.unlockedToys.includes(t.id));
+    if (lockedToys.length === 0) return null;
+
+    const newToy = lockedToys[Math.floor(Math.random() * lockedToys.length)];
+    saveData.unlockedToys.push(newToy.id);
+    saveGameData();
+    return newToy;
+  }
+
+  // 問題プール生成
   function generateQuestions(course, level, count) {
     const pool = [];
 
@@ -262,7 +488,6 @@
     const selected = pool.slice(0, count);
 
     return selected.map((q, idx) => {
-      // 偶数インデックス（0問目、2問目など）は穴埋め、奇数は答えあて
       const isBlankResult = idx % 2 === 1;
       const pattern = isBlankResult ? 'blankResult' : 'blankMiddle';
       const answer = isBlankResult ? q.result : q.second;
@@ -386,7 +611,7 @@
     trayBodies = [trayBottom, leftRim, rightRim];
     World.add(world, trayBodies);
 
-    if (baseBlock && !fallingBlock && transformedBlocks.length === 0) {
+    if (baseBlock && !fallingBlock && transformedBlocks.length === 0 && !isSandboxMode) {
       const { h } = getBlockDimensions(baseBlock.numberValue);
       Body.setPosition(baseBlock, {
         x: centerX,
@@ -424,9 +649,13 @@
     transformedBlocks.forEach((b) => {
       if (b) World.remove(world, b);
     });
+    sandboxBodies.forEach((b) => {
+      if (b) World.remove(world, b);
+    });
     baseBlock = null;
     fallingBlock = null;
     transformedBlocks = [];
+    sandboxBodies = [];
     hasTriggeredCollision = false;
   }
 
@@ -441,6 +670,7 @@
 
   // コース開始
   function startCourse(course, level, count) {
+    isSandboxMode = false;
     clearAllTimers();
     currentCourse = course;
     currentLevel = level || currentLevel;
@@ -452,10 +682,97 @@
     titleOverlay.classList.add('is-hidden');
     resultOverlay.classList.add('is-hidden');
     resultOverlay.setAttribute('aria-hidden', 'true');
+    zukanOverlay.classList.add('is-hidden');
+    zukanOverlay.setAttribute('aria-hidden', 'true');
+
+    equationRowEl.classList.remove('is-hidden');
+    choicesGridEl.classList.remove('is-hidden');
+    sandboxControlsEl.classList.add('is-hidden');
 
     levelBadgeEl.textContent = LEVEL_NAMES[currentLevel];
+    levelBadgeEl.style.display = 'inline-block';
     setupStageGeometry();
     loadQuestion(0);
+  }
+
+  // つみき広場（自由モード）の開始
+  function startSandboxMode() {
+    isSandboxMode = true;
+    clearAllTimers();
+    clearBlocks();
+
+    titleOverlay.classList.add('is-hidden');
+    resultOverlay.classList.add('is-hidden');
+    zukanOverlay.classList.add('is-hidden');
+
+    equationRowEl.classList.add('is-hidden');
+    choicesGridEl.classList.add('is-hidden');
+    sandboxControlsEl.classList.remove('is-hidden');
+
+    levelBadgeEl.textContent = 'ひろば';
+    questionProgressEl.textContent = 'じゆう あそび';
+    blackboardMessageEl.textContent = 'すきな つみきを ポンポン おとして つみあげてみよう！';
+    blackboardMessageEl.className = 'blackboard-message';
+    choicesLabelEl.textContent = 'したの つみきを えらんで おしてね！';
+
+    setupStageGeometry();
+  }
+
+  // 広場でおもちゃ積み木を落とす
+  function dropToyInSandbox(toy) {
+    const size = 56;
+    const dropX = stageWidth / 2 + (Math.random() - 0.5) * 80;
+    const dropY = 32;
+
+    const block = Bodies.rectangle(dropX, dropY, size, size, {
+      chamfer: { radius: 10 },
+      restitution: 0.35,
+      friction: 0.7,
+      density: 0.002,
+      label: 'toyBlock'
+    });
+    block.toyData = toy;
+    block.customW = size;
+    block.customH = size;
+    block.popScale = 0.8;
+
+    Body.setVelocity(block, { x: (Math.random() - 0.5) * 1.5, y: 1.5 });
+    World.add(world, block);
+    sandboxBodies.push(block);
+
+    // 最大15個まで
+    if (sandboxBodies.length > 15) {
+      const old = sandboxBodies.shift();
+      World.remove(world, old);
+    }
+  }
+
+  // 広場で数字ブロックを落とす
+  function dropNumberInSandbox(num) {
+    const { w, h } = getBlockDimensions(num);
+    const dropX = stageWidth / 2 + (Math.random() - 0.5) * 80;
+    const dropY = 32;
+
+    const block = Bodies.rectangle(dropX, dropY, w, h, {
+      chamfer: { radius: 12 },
+      restitution: 0.35,
+      friction: 0.7,
+      density: 0.002,
+      label: 'numberBlock'
+    });
+    block.numberValue = num;
+    block.customW = w;
+    block.customH = h;
+    block.popScale = 0.8;
+
+    Body.setVelocity(block, { x: (Math.random() - 0.5) * 1.5, y: 1.5 });
+    World.add(world, block);
+    sandboxBodies.push(block);
+
+    if (sandboxBodies.length > 15) {
+      const old = sandboxBodies.shift();
+      World.remove(world, old);
+    }
   }
 
   // 問題ロード
@@ -517,7 +834,7 @@
 
   // 4択ボタン選択
   function onChoiceSelected(pickedNum, btnElement) {
-    if (isInputLocked || !currentQ) return;
+    if (isInputLocked || !currentQ || isSandboxMode) return;
     isInputLocked = true;
 
     window.se.playButton();
@@ -548,6 +865,7 @@
 
   // 衝突検知
   function onCollisionStart(event) {
+    if (isSandboxMode) return;
     if (hasTriggeredCollision || !fallingBlock || !baseBlock) return;
 
     const pairs = event.pairs;
@@ -750,6 +1068,20 @@
     const correctCount = solvedHistory.filter((item) => item.isCorrect).length;
     const finalScore = Math.round((correctCount / totalQuestions) * 100);
 
+    saveData.totalClears++;
+    if (finalScore === 100) {
+      saveData.perfectClears++;
+      // メダル獲得記録
+      saveData.medals[`${currentCourse}_${currentLevel}`] = true;
+    }
+    saveGameData();
+
+    // 100点満点、または80点以上で新積み木獲得のチャンス！
+    let awardedToy = null;
+    if (finalScore === 100 || (finalScore >= 80 && Math.random() < 0.6)) {
+      awardedToy = awardNewToy();
+    }
+
     if (finalScore === 100) {
       window.se.playFanfare();
     } else {
@@ -760,17 +1092,26 @@
 
     if (finalScore === 100) {
       resultTitleEl.textContent = '100てん まんてん！';
-      resultSubtitleEl.textContent = `【${LEVEL_NAMES[currentLevel]}・${totalQuestions}もん】ぜんぶ せいかい！ たいへん よくできました！`;
+      resultSubtitleEl.textContent = `【${LEVEL_NAMES[currentLevel]}・${totalQuestions}もん】きんメダル かくとく！ たいへん よくできました！`;
       renderStampSVG('hanamaru');
     } else if (finalScore >= 80) {
       resultSubtitleEl.textContent = `【${LEVEL_NAMES[currentLevel]}・${totalQuestions}もん】おしい！ あとすこしで まんてんだね！`;
       renderStampSVG('maru');
-    } else if (finalScore >= 60) {
-      resultSubtitleEl.textContent = `【${LEVEL_NAMES[currentLevel]}・${totalQuestions}もん】よく がんばったね！ つぎは もっと いけるよ！`;
-      renderStampSVG('fight');
     } else {
       resultSubtitleEl.textContent = `【${LEVEL_NAMES[currentLevel]}・${totalQuestions}もん】なんかいも あそんで つよくなろう！`;
       renderStampSVG('fight');
+    }
+
+    // 新積み木獲得バナー表示
+    if (awardedToy) {
+      rewardBannerEl.classList.remove('is-hidden');
+      rewardNameEl.textContent = `「${awardedToy.name}」の つみき`;
+      rewardIconBoxEl.innerHTML = generateToySVG(awardedToy, true);
+      addTimer(() => {
+        window.se.playGetToy();
+      }, 500);
+    } else {
+      rewardBannerEl.classList.add('is-hidden');
     }
 
     reviewHeadingEl.textContent = `といた ${totalQuestions}もんの ふりかえり（${correctCount}もん せいかい）`;
@@ -933,7 +1274,39 @@
     ctx.restore();
   }
 
-  // 積み木描画
+  // おもちゃ積み木のCanvas描画
+  function drawToyBlock(block) {
+    if (!block || !block.toyData) return;
+    const { x, y } = block.position;
+    const w = block.customW;
+    const h = block.customH;
+    const toy = block.toyData;
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(block.angle);
+
+    ctx.fillStyle = COLORS.navy;
+    roundRect(ctx, -w / 2, -h / 2 + 4, w, h, 12);
+    ctx.fill();
+
+    ctx.fillStyle = toy.color;
+    ctx.strokeStyle = COLORS.navy;
+    ctx.lineWidth = 3.5;
+    roundRect(ctx, -w / 2, -h / 2, w, h, 12);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.font = "800 14px 'M PLUS Rounded 1c', sans-serif";
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = COLORS.navy;
+    ctx.fillText(toy.name, 0, 0);
+
+    ctx.restore();
+  }
+
+  // すうじ積み木描画
   function drawNumberBlock(block) {
     if (!block) return;
 
@@ -1173,7 +1546,7 @@
 
     Engine.update(engine, delta);
 
-    if (fallingBlock && baseBlock && !hasTriggeredCollision) {
+    if (!isSandboxMode && fallingBlock && baseBlock && !hasTriggeredCollision) {
       const dy = Math.abs(fallingBlock.position.y - baseBlock.position.y);
       const combinedHalfH = (fallingBlock.customH + baseBlock.customH) / 2;
       if (dy <= combinedHalfH + 6) {
@@ -1203,6 +1576,15 @@
     if (fallingBlock) drawNumberBlock(fallingBlock);
     transformedBlocks.forEach((b) => {
       if (b) drawNumberBlock(b);
+    });
+
+    // 広場モードの積み木描画
+    sandboxBodies.forEach((b) => {
+      if (b.label === 'toyBlock') {
+        drawToyBlock(b);
+      } else {
+        drawNumberBlock(b);
+      }
     });
 
     drawAndUpdateEffects();
@@ -1247,10 +1629,38 @@
     });
   });
 
+  // 図鑑モーダル開閉
+  btnOpenZukan.addEventListener('click', () => {
+    window.se.playButton();
+    updateZukanUI();
+    zukanOverlay.classList.remove('is-hidden');
+    zukanOverlay.setAttribute('aria-hidden', 'false');
+  });
+
+  btnCloseZukan.addEventListener('click', () => {
+    window.se.playButton();
+    zukanOverlay.classList.add('is-hidden');
+    zukanOverlay.setAttribute('aria-hidden', 'true');
+  });
+
+  // つみき広場
+  btnOpenSandbox.addEventListener('click', () => {
+    window.se.playButton();
+    startSandboxMode();
+  });
+
+  btnSandboxClear.addEventListener('click', () => {
+    window.se.playButton();
+    clearBlocks();
+  });
+
   btnBackTitle.addEventListener('click', () => {
     window.se.playButton();
     clearAllTimers();
+    clearBlocks();
+    isSandboxMode = false;
     titleOverlay.classList.remove('is-hidden');
+    updateCoursePreviews();
   });
 
   btnReplaySame.addEventListener('click', () => {
@@ -1263,6 +1673,7 @@
     resultOverlay.classList.add('is-hidden');
     resultOverlay.setAttribute('aria-hidden', 'true');
     titleOverlay.classList.remove('is-hidden');
+    updateCoursePreviews();
   });
 
   btnSound.addEventListener('click', () => {
@@ -1277,8 +1688,10 @@
   });
 
   // 初期起動
+  loadSaveData();
   initPhysics();
   updateCoursePreviews();
+  updateZukanUI();
   questions = generateQuestions('add', 'easy', totalQuestions);
   loadQuestion(0);
   requestAnimationFrame(gameLoop);

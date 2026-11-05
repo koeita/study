@@ -240,7 +240,34 @@ class SoundEffects {
     osc.stop(t + 0.16);
   }
 
-  // 不正解・おしい時の優しい木琴音（怖くない、残念な音）
+  // 新積み木ゲット音「タララーン！」
+  playGetToy() {
+    if (!this.enabled) return;
+    this.init();
+    if (!this.ctx) return;
+
+    const t = this.ctx.currentTime;
+    const notes = [523.25, 659.25, 783.99, 1046.5];
+    notes.forEach((freq, idx) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      const st = t + idx * 0.08;
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, st);
+
+      gain.gain.setValueAtTime(0.001, st);
+      gain.gain.linearRampToValueAtTime(0.24, st + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, st + (idx === 3 ? 0.45 : 0.15));
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(st);
+      osc.stop(st + (idx === 3 ? 0.45 : 0.15));
+    });
+  }
+
+  // 不正解・おしい時の優しい木琴音
   playOshii() {
     if (!this.enabled) return;
     this.init();
@@ -248,8 +275,8 @@ class SoundEffects {
 
     const t = this.ctx.currentTime;
     const notes = [
-      { freq: 440, start: 0.0, dur: 0.16 }, // A4
-      { freq: 349.23, start: 0.15, dur: 0.35 } // F4
+      { freq: 440, start: 0.0, dur: 0.16 },
+      { freq: 349.23, start: 0.15, dur: 0.35 }
     ];
 
     notes.forEach((n) => {
