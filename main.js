@@ -22,6 +22,8 @@
 
   const titleOverlay = document.getElementById('title-overlay');
   const resultOverlay = document.getElementById('result-overlay');
+  const resultStampWrapEl = document.getElementById('result-stamp-wrap');
+  const resultTitleEl = document.getElementById('result-title');
   const resultSubtitleEl = document.getElementById('result-subtitle');
   const reviewListEl = document.getElementById('review-list');
   const btnReplaySame = document.getElementById('btn-replay-same');
@@ -71,7 +73,7 @@
   let questionIndex = 0;
   let questions = [];
   let currentQ = null;
-  let solvedHistory = [];
+  let solvedHistory = []; // { text, isCorrect, correctAns, userPick }
   let isInputLocked = false;
 
   // ステージ寸法
@@ -211,14 +213,12 @@
       }
     } else if (course === 'mul') {
       if (level === 'easy') {
-        // 2の段まで
         [1, 2].forEach((a) => {
           for (let b = 1; b <= 9; b++) {
             pool.push({ type: 'mul', op: '×', first: a, second: b, result: a * b });
           }
         });
       } else if (level === 'normal') {
-        // 4の段まで
         [1, 2, 3, 4].forEach((a) => {
           for (let b = 1; b <= 9; b++) {
             pool.push({ type: 'mul', op: '×', first: a, second: b, result: a * b });
@@ -228,7 +228,6 @@
           }
         });
       } else {
-        // 1〜9の段
         for (let a = 1; a <= 9; a++) {
           for (let b = 1; b <= 9; b++) {
             pool.push({ type: 'mul', op: '×', first: a, second: b, result: a * b });
@@ -679,7 +678,8 @@
     choicesLabelEl.textContent = 'やったね！ ぴったり へんしん できたよ！';
 
     solvedHistory.push({
-      text: fullEq
+      text: fullEq,
+      isCorrect: true
     });
 
     window.se.playPinPon();
@@ -696,6 +696,7 @@
       };
     }, 180);
 
+    // 1.5秒後に自動で次の問題へ
     addTimer(() => {
       if (questionIndex + 1 < TOTAL_QUESTIONS) {
         loadQuestion(questionIndex + 1);
@@ -705,88 +706,161 @@
     }, 1500);
   }
 
-  // 間違えたとき（おしいヒント）
+  // 間違えたときの処理（正解を表示し、自動で次の問題へ進む仕様に変更）
   function handleWrongAnswer(pickedVal, calcResult) {
     const blankEl = currentQ.pattern === 'blankMiddle' ? eqPartBEl : eqPartCEl;
     blankEl.className = 'eq-blank is-filled-wrong';
 
-    let hintText = '';
-    if (currentQ.pattern === 'blankMiddle') {
-      const targetVal = currentQ.result;
-      if (currentQ.type === 'add') {
-        if (calcResult < targetVal) {
-          hintText = `おしい！ あと ${targetVal - calcResult} たりないよ！`;
-        } else {
-          hintText = `おしい！ ${calcResult - targetVal} おおきいね！`;
-        }
-      } else {
-        hintText = `おしい！ めざすのは ${targetVal} だよ！`;
-      }
-    } else {
-      hintText = `おしい！ ${currentQ.first} ${currentQ.op} ${currentQ.second} は ${pickedVal} じゃないよ！`;
-    }
+    const fullEq = `${currentQ.first} ${currentQ.op} ${currentQ.second} ＝ ${currentQ.result}`;
+    const wrongMsg = `ざんねん！ 正しい こたえは ${currentQ.answer} だよ`;
 
-    blackboardMessageEl.textContent = hintText;
+    blackboardMessageEl.textContent = wrongMsg;
     blackboardMessageEl.className = 'blackboard-message is-hint';
-    choicesLabelEl.textContent = 'もういちど すうじを えらんで みよう！';
+    choicesLabelEl.textContent = `せいかいは「${fullEq}」でした！`;
+
+    solvedHistory.push({
+      text: fullEq,
+      isCorrect: false
+    });
 
     window.se.playOshii();
 
     floatingTexts.push({
       x: stageWidth / 2,
       y: Math.max(46, stageHeight * 0.22),
-      text: `こたえは ${currentQ.answer} かな？`,
+      text: `こたえ：${currentQ.answer}`,
       color: '#e76f51',
       life: 1.0
     });
 
+    // 1.8秒後に正解を確認したあと、次の問題へ自動で進む
     addTimer(() => {
-      window.se.playResetPop();
-
-      transformedBlocks.forEach((b) => {
-        if (b) {
-          shockwaves.push({
-            x: b.position.x,
-            y: b.position.y,
-            r: 18,
-            maxR: 65,
-            alpha: 0.8,
-            color: COLORS.navy
-          });
-        }
-      });
-
-      spawnBaseBlock(currentQ.first);
-      blankEl.textContent = '？';
-      blankEl.className = 'eq-blank';
-
-      choiceBtns.forEach((b) => {
-        b.disabled = false;
-        b.classList.remove('is-pressed');
-      });
-      isInputLocked = false;
-    }, 1100);
+      if (questionIndex + 1 < TOTAL_QUESTIONS) {
+        loadQuestion(questionIndex + 1);
+      } else {
+        showResultScreen();
+      }
+    }, 1800);
   }
 
-  // 100点画面
+  // 結果発表画面（正解数に応じた点数評価：20点×正解数）
   function showResultScreen() {
-    window.se.playFanfare();
+    const correctCount = solvedHistory.filter((item) => item.isCorrect).length;
+    const finalScore = correctCount * 20;
 
-    resultSubtitleEl.textContent = `【${LEVEL_NAMES[currentLevel]}】5もん ぜんぶ せいかい できたね！`;
+    // 音の再生
+    if (finalScore === 100) {
+      window.se.playFanfare();
+    } else {
+      window.se.playCheer();
+    }
+
+    // 点数に応じたタイトル・サブタイトル・スタンプの切り替え
+    resultTitleEl.textContent = `${finalScore}てん！`;
+
+    if (finalScore === 100) {
+      resultTitleEl.textContent = '100てん まんてん！';
+      resultSubtitleEl.textContent = `【${LEVEL_NAMES[currentLevel]}】ぜんぶ せいかい！ たいへん よくできました！`;
+      renderStampSVG('hanamaru');
+    } else if (finalScore >= 80) {
+      resultSubtitleEl.textContent = `【${LEVEL_NAMES[currentLevel]}】おしい！ あとすこしで まんてんだね！`;
+      renderStampSVG('maru');
+    } else if (finalScore >= 60) {
+      resultSubtitleEl.textContent = `【${LEVEL_NAMES[currentLevel]}】よく がんばったね！ つぎは もっと いけるよ！`;
+      renderStampSVG('fight');
+    } else {
+      resultSubtitleEl.textContent = `【${LEVEL_NAMES[currentLevel]}】なんかいも あそんで つよくなろう！`;
+      renderStampSVG('fight');
+    }
+
+    // ふりかえり一覧（丸・バツを色分け）
     reviewListEl.innerHTML = '';
     solvedHistory.forEach((item, idx) => {
       const li = document.createElement('li');
       li.className = 'review-item';
+
+      const markClass = item.isCorrect ? 'is-correct' : 'is-wrong';
+      const markText = item.isCorrect ? 'せいかい' : 'まちがい';
+
       li.innerHTML = `
         <span class="review-num-badge">だい ${idx + 1} もん</span>
         <span class="review-eq">${item.text}</span>
-        <span class="review-mark">せいかい</span>
+        <span class="review-mark ${markClass}">${markText}</span>
       `;
       reviewListEl.appendChild(li);
     });
 
     resultOverlay.classList.remove('is-hidden');
     resultOverlay.setAttribute('aria-hidden', 'false');
+  }
+
+  // 評価スタンプSVGの描画（花丸 / 丸 / ファイト）
+  function renderStampSVG(type) {
+    if (type === 'hanamaru') {
+      resultStampWrapEl.innerHTML = `
+        <svg viewBox="0 0 160 160" class="result-stamp-svg">
+          <path
+            d="M 80 12
+               Q 96 4, 104 20
+               Q 122 14, 124 32
+               Q 142 32, 138 50
+               Q 154 58, 144 74
+               Q 156 90, 140 102
+               Q 146 120, 128 124
+               Q 126 142, 108 138
+               Q 98 154, 80 144
+               Q 62 154, 52 138
+               Q 34 142, 32 124
+               Q 14 120, 20 102
+               Q 4 90, 16 74
+               Q 6 58, 22 50
+               Q 18 32, 36 32
+               Q 38 14, 56 20
+               Q 64 4, 80 12 Z"
+            fill="#fff5f5"
+            stroke="#e63946"
+            stroke-width="6"
+            stroke-linejoin="round"
+          />
+          <circle cx="80" cy="80" r="46" fill="none" stroke="#e63946" stroke-width="6" />
+          <path
+            d="M 54 78
+               A 26 26 0 1 1 80 106
+               A 16 16 0 1 1 96 80
+               A 8 8 0 1 1 80 72"
+            fill="none"
+            stroke="#e63946"
+            stroke-width="6"
+            stroke-linecap="round"
+          />
+          <text x="80" y="88" text-anchor="middle" fill="#e63946" font-size="24" font-weight="800">
+            100てん
+          </text>
+        </svg>
+      `;
+    } else if (type === 'maru') {
+      resultStampWrapEl.innerHTML = `
+        <svg viewBox="0 0 160 160" class="result-stamp-svg">
+          <circle cx="80" cy="80" r="66" fill="#fff5f5" stroke="#e63946" stroke-width="8" />
+          <circle cx="80" cy="80" r="48" fill="none" stroke="#e63946" stroke-width="5" />
+          <text x="80" y="88" text-anchor="middle" fill="#e63946" font-size="26" font-weight="800">
+            たいへんよく
+          </text>
+        </svg>
+      `;
+    } else {
+      resultStampWrapEl.innerHTML = `
+        <svg viewBox="0 0 160 160" class="result-stamp-svg">
+          <circle cx="80" cy="80" r="66" fill="#f0f7ff" stroke="#457b9d" stroke-width="8" />
+          <text x="80" y="76" text-anchor="middle" fill="#457b9d" font-size="24" font-weight="800">
+            ファイト！
+          </text>
+          <text x="80" y="104" text-anchor="middle" fill="#457b9d" font-size="18" font-weight="800">
+            もういっかい
+          </text>
+        </svg>
+      `;
+    }
   }
 
   // 紙吹雪
@@ -859,7 +933,7 @@
     ctx.restore();
   }
 
-  // すうじ積み木描画（ドットの飛び出しを防止するクリッピング＆自動スケーリング）
+  // 積み木描画
   function drawNumberBlock(block) {
     if (!block) return;
 
@@ -876,12 +950,10 @@
     ctx.translate(x, y);
     ctx.rotate(block.angle * 0.35);
 
-    // 1. 立体影
     ctx.fillStyle = COLORS.navy;
     roundRect(ctx, -w / 2, -h / 2 + 5, w, h, 14);
     ctx.fill();
 
-    // 2. 積み木本体
     ctx.fillStyle = getBlockColor(num);
     ctx.strokeStyle = COLORS.navy;
     ctx.lineWidth = 3.5;
@@ -889,7 +961,6 @@
     ctx.fill();
     ctx.stroke();
 
-    // 3. 上部のハイライトライン
     ctx.beginPath();
     ctx.moveTo(-w / 2 + 14, -h / 2 + 6);
     ctx.lineTo(w / 2 - 14, -h / 2 + 6);
@@ -898,7 +969,6 @@
     ctx.lineCap = 'round';
     ctx.stroke();
 
-    // 4. 数字テキスト（2桁のときはフォントサイズをやや控えめにして上下バランスを確保）
     const strNum = String(num);
     const fontScale = strNum.length >= 2 ? 0.38 : 0.44;
     const fontSize = Math.round(Math.min(w, h) * fontScale);
@@ -908,7 +978,7 @@
     ctx.fillStyle = COLORS.navy;
     ctx.fillText(strNum, 0, -h * 0.18);
 
-    // 5. 積み木内部のみに描画制限（クリッピング）をかけ、絶対に枠外へドットが飛び出ないようにする
+    // 積み木内部のクリッピング＆ドット描画
     ctx.save();
     roundRect(ctx, -w / 2 + 4, -h / 2 + 4, w - 8, h - 8, 10);
     ctx.clip();
@@ -918,20 +988,17 @@
     ctx.restore();
   }
 
-  // 積み木内の●ドット描画（数字の大きさに合わせて行数・列数・サイズを最適化）
+  // 積み木内の●ドット描画（単色ネイビーで統一）
   function drawBlockDots(context, num, w, h) {
     if (num <= 0) return;
 
-    // 10以下は5列（1年生の5のまとまり）、11以上は10列（10進数のまとまり）
     const maxCols = num <= 10 ? 5 : 10;
     const rows = Math.ceil(num / maxCols);
 
-    // 数字の下の描画可能エリア（下半分）
     const availW = w * 0.82;
     const availH = h * 0.38;
     const centerY = h * 0.23;
 
-    // 枠内に完全に収まるようドット半径を動的に計算
     const maxDotRByW = availW / (maxCols * 2.5);
     const maxDotRByH = availH / (rows * 2.4);
     const dotRadius = Math.max(1.8, Math.min(4.5, Math.min(maxDotRByW, maxDotRByH)));
@@ -942,6 +1009,9 @@
     const totalHeight = (rows - 1) * rowGap;
     const startY = centerY - totalHeight / 2;
 
+    // すべてダークネイビー一色で統一
+    context.fillStyle = COLORS.navy;
+
     let remaining = num;
     for (let r = 0; r < rows; r++) {
       const countInRow = Math.min(maxCols, remaining);
@@ -951,12 +1021,8 @@
 
       for (let c = 0; c < countInRow; c++) {
         const x = startX + c * colGap;
-        const dotIndex = r * maxCols + c;
         context.beginPath();
         context.arc(x, y, dotRadius, 0, Math.PI * 2);
-        // 10個ごとに色を交互に（10個のまとまりが直感的にわかる）
-        const isTenGroup = Math.floor(dotIndex / 10) % 2 === 1;
-        context.fillStyle = isTenGroup ? COLORS.hanamaruRed : COLORS.navy;
         context.fill();
       }
       remaining -= countInRow;

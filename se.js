@@ -51,7 +51,7 @@ class SoundEffects {
     osc.stop(t + 0.14);
   }
 
-  // たし算：ブロック同士がぶつかって合体する「ガチャン！」
+  // たし算：合体音
   playMerge(sumValue = 10) {
     if (!this.enabled) return;
     this.init();
@@ -91,7 +91,7 @@ class SoundEffects {
     });
   }
 
-  // ひき算：ブロックが削り取られてポロリと落ちる「カチッ・コロン！」
+  // ひきざん：削り取り音
   playSubtract() {
     if (!this.enabled) return;
     this.init();
@@ -99,7 +99,6 @@ class SoundEffects {
 
     const t = this.ctx.currentTime;
 
-    // 削れるカチン音
     const osc1 = this.ctx.createOscillator();
     const gain1 = this.ctx.createGain();
     osc1.type = 'triangle';
@@ -112,7 +111,6 @@ class SoundEffects {
     osc1.start(t);
     osc1.stop(t + 0.08);
 
-    // ポロリ音
     const osc2 = this.ctx.createOscillator();
     const gain2 = this.ctx.createGain();
     osc2.type = 'sine';
@@ -126,7 +124,7 @@ class SoundEffects {
     osc2.stop(t + 0.16);
   }
 
-  // かけ算：掛け合わされてポンポポン！と倍増する音
+  // かけざん：倍増音
   playMultiply() {
     if (!this.enabled) return;
     this.init();
@@ -153,7 +151,7 @@ class SoundEffects {
     });
   }
 
-  // わり算：ブロックがパカッ！と半分・等分に割れる音
+  // わりざん：等分割り音
   playDivide() {
     if (!this.enabled) return;
     this.init();
@@ -161,7 +159,6 @@ class SoundEffects {
 
     const t = this.ctx.currentTime;
 
-    // パカッの破裂音
     const osc1 = this.ctx.createOscillator();
     const gain1 = this.ctx.createGain();
     osc1.type = 'square';
@@ -174,7 +171,6 @@ class SoundEffects {
     osc1.start(t);
     osc1.stop(t + 0.07);
 
-    // 割れたあとの余韻
     const osc2 = this.ctx.createOscillator();
     const gain2 = this.ctx.createGain();
     osc2.type = 'sine';
@@ -244,7 +240,7 @@ class SoundEffects {
     osc.stop(t + 0.16);
   }
 
-  // おしい時の優しい木琴音
+  // 不正解・おしい時の優しい木琴音（怖くない、残念な音）
   playOshii() {
     if (!this.enabled) return;
     this.init();
@@ -252,8 +248,8 @@ class SoundEffects {
 
     const t = this.ctx.currentTime;
     const notes = [
-      { freq: 440, start: 0.0, dur: 0.15 },
-      { freq: 392, start: 0.14, dur: 0.24 }
+      { freq: 440, start: 0.0, dur: 0.16 }, // A4
+      { freq: 349.23, start: 0.15, dur: 0.35 } // F4
     ];
 
     notes.forEach((n) => {
@@ -274,31 +270,7 @@ class SoundEffects {
     });
   }
 
-  // 元のブロックに戻る音
-  playResetPop() {
-    if (!this.enabled) return;
-    this.init();
-    if (!this.ctx) return;
-
-    const t = this.ctx.currentTime;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(420, t);
-    osc.frequency.exponentialRampToValueAtTime(280, t + 0.09);
-
-    gain.gain.setValueAtTime(0.18, t);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
-
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
-
-    osc.start(t);
-    osc.stop(t + 0.1);
-  }
-
-  // 100てんファンファーレ
+  // 100点満点ファンファーレ
   playFanfare() {
     if (!this.enabled) return;
     this.init();
@@ -324,6 +296,39 @@ class SoundEffects {
 
       gain.gain.setValueAtTime(0.001, start);
       gain.gain.linearRampToValueAtTime(0.24, start + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + note.duration);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(start);
+      osc.stop(start + note.duration);
+    });
+  }
+
+  // 60〜80点クリア時の前向きなジングル
+  playCheer() {
+    if (!this.enabled) return;
+    this.init();
+    if (!this.ctx) return;
+
+    const t = this.ctx.currentTime;
+    const melody = [
+      { freq: 523.25, delay: 0.0, duration: 0.14 },
+      { freq: 659.25, delay: 0.12, duration: 0.14 },
+      { freq: 783.99, delay: 0.24, duration: 0.35 }
+    ];
+
+    melody.forEach((note) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      const start = t + note.delay;
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(note.freq, start);
+
+      gain.gain.setValueAtTime(0.001, start);
+      gain.gain.linearRampToValueAtTime(0.2, start + 0.02);
       gain.gain.exponentialRampToValueAtTime(0.001, start + note.duration);
 
       osc.connect(gain);

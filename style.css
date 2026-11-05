@@ -369,7 +369,6 @@ body {
   margin-bottom: 6px;
 }
 
-/* 難易度セレクター（3つ並び） */
 .difficulty-section {
   display: flex;
   flex-direction: column;
@@ -423,7 +422,6 @@ body {
   background-color: #ffadad;
 }
 
-/* 4大コース（2列×2行） */
 .courses-section {
   display: flex;
   flex-direction: column;
@@ -485,7 +483,7 @@ body {
   color: #2c3e50;
 }
 
-/* 100てん画面 */
+/* けっか はっぴょう（結果画面） */
 .result-header {
   display: flex;
   align-items: center;
@@ -494,13 +492,13 @@ body {
   flex-wrap: wrap;
 }
 
-.hanamaru-svg-wrap {
+.result-stamp-wrap {
   width: 104px;
   height: 104px;
   animation: stampPop 0.45s cubic-bezier(0.2, 1.3, 0.4, 1) forwards;
 }
 
-.hanamaru-svg {
+.result-stamp-svg {
   width: 100%;
   height: 100%;
 }
@@ -563,7 +561,7 @@ body {
   justify-content: space-between;
   background-color: rgba(255, 255, 255, 0.1);
   border-radius: 8px;
-  padding: 3px 10px;
+  padding: 4px 10px;
   font-size: 1.05rem;
 }
 
@@ -578,8 +576,19 @@ body {
 }
 
 .review-mark {
-  color: #ffe066;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
+  border-radius: 6px;
+  padding: 1px 8px;
+}
+
+.review-mark.is-correct {
+  color: #2c3e50;
+  background-color: #88d49e;
+}
+
+.review-mark.is-wrong {
+  color: #ffffff;
+  background-color: #e76f51;
 }
 
 .result-actions {

@@ -27,7 +27,7 @@
         </button>
       </div>
 
-      <!-- 穴埋め式の特大計算問題（＋, －, ×, ÷、こたえあて・あいだあて両対応） -->
+      <!-- 穴埋め式の特大計算問題 -->
       <div class="equation-row" aria-live="polite">
         <span id="eq-part-a" class="eq-num">4</span>
         <span id="eq-op" class="eq-op">＋</span>
@@ -69,7 +69,7 @@
           <p class="title-desc">すうじを おして つみきを へんしん させよう！</p>
         </div>
 
-        <!-- 難易度セレクター（かんたん・ふつう・むずかしい） -->
+        <!-- 難易度セレクター -->
         <div class="difficulty-section">
           <p class="section-heading">むずかしさを えらんでね</p>
           <div class="difficulty-tabs" role="radiogroup" aria-label="むずかしさ">
@@ -113,55 +113,15 @@
       </div>
     </section>
 
-    <!-- 5問クリア（100てん まんてん！）オーバーレイ画面 -->
+    <!-- 5問終了（けっか はっぴょう）オーバーレイ画面 -->
     <section id="result-overlay" class="overlay-screen is-hidden" aria-hidden="true">
       <div class="overlay-card result-card">
         <div class="result-header">
-          <!-- SVGで描く大きな赤い「はなまる」 -->
-          <div class="hanamaru-svg-wrap" aria-hidden="true">
-            <svg viewBox="0 0 160 160" class="hanamaru-svg">
-              <path
-                d="M 80 12
-                   Q 96 4, 104 20
-                   Q 122 14, 124 32
-                   Q 142 32, 138 50
-                   Q 154 58, 144 74
-                   Q 156 90, 140 102
-                   Q 146 120, 128 124
-                   Q 126 142, 108 138
-                   Q 98 154, 80 144
-                   Q 62 154, 52 138
-                   Q 34 142, 32 124
-                   Q 14 120, 20 102
-                   Q 4 90, 16 74
-                   Q 6 58, 22 50
-                   Q 18 32, 36 32
-                   Q 38 14, 56 20
-                   Q 64 4, 80 12 Z"
-                fill="#fff5f5"
-                stroke="#e63946"
-                stroke-width="6"
-                stroke-linejoin="round"
-              />
-              <circle cx="80" cy="80" r="46" fill="none" stroke="#e63946" stroke-width="6" />
-              <path
-                d="M 54 78
-                   A 26 26 0 1 1 80 106
-                   A 16 16 0 1 1 96 80
-                   A 8 8 0 1 1 80 72"
-                fill="none"
-                stroke="#e63946"
-                stroke-width="6"
-                stroke-linecap="round"
-              />
-              <text x="80" y="88" text-anchor="middle" fill="#e63946" font-size="24" font-weight="800">
-                100てん
-              </text>
-            </svg>
-          </div>
+          <!-- 評価スタンプ（点数に応じて切り替え） -->
+          <div id="result-stamp-wrap" class="result-stamp-wrap" aria-hidden="true"></div>
 
           <div class="result-title-box">
-            <h2 class="result-title">100てん まんてん！</h2>
+            <h2 id="result-title" class="result-title">100てん まんてん！</h2>
             <p id="result-subtitle" class="result-subtitle">5もん ぜんぶ せいかい できたね！</p>
           </div>
         </div>
