@@ -1054,7 +1054,7 @@
     choicesGridEl.classList.remove('is-hidden');
     sandboxControlsEl.classList.add('is-hidden');
 
-    levelBadgeEl.textContent = `${COURSE_NAMES[currentStageObj.course]} ステージ${currentStageObj.stageNum}`;
+    levelBadgeEl.textContent = `ステージ ${currentStageObj.stageNum}`;
     levelBadgeEl.style.display = 'inline-block';
     setupStageGeometry();
     loadQuestion(0);
