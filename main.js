@@ -620,7 +620,7 @@
           </div>
           <div class="stage-sub-line">
             <div class="stage-stars-box" aria-label="ほし ${stars}こ">${starsHtml}</div>
-            <span class="stage-example-text">れい：${st.example}</span>
+            <span class="stage-example-text">${st.example}</span>
           </div>
         </div>
 
@@ -1146,7 +1146,7 @@
     isInputLocked = false;
     hanamaruStamp = null;
 
-    questionProgressEl.textContent = `だい ${idx + 1} もん / ${totalQuestions} もん`;
+    questionProgressEl.textContent = `だい${idx + 1}もん / ${totalQuestions}もん`;
     eqOpEl.textContent = currentQ.op;
 
     if (currentQ.pattern === 'blankMiddle') {

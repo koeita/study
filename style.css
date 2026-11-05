@@ -60,7 +60,9 @@ body {
 .header-center-info {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
+  min-width: 0;
 }
 
 .level-badge {
@@ -71,6 +73,8 @@ body {
   padding: 1px 10px;
   font-size: 0.82rem;
   font-weight: 800;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .question-progress {
@@ -81,6 +85,8 @@ body {
   font-size: 0.95rem;
   letter-spacing: 0.04em;
   color: #fff9db;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .bb-ctrl-btn {
@@ -96,6 +102,8 @@ body {
   box-shadow: 0 4px 0 #2c3e50;
   transition: transform 0.06s ease, box-shadow 0.06s ease;
   touch-action: manipulation;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .bb-ctrl-btn:hover {
@@ -548,6 +556,7 @@ body {
   box-shadow: 0 3px 0 #2c3e50;
   transition: transform 0.06s ease, box-shadow 0.06s ease;
   touch-action: manipulation;
+  white-space: nowrap;
 }
 
 .course-tab * {
@@ -590,6 +599,8 @@ body {
 .count-label {
   font-size: 0.85rem;
   color: #2c3e50;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .count-tabs-mini {
@@ -609,6 +620,8 @@ body {
   cursor: pointer;
   box-shadow: 0 2px 0 #2c3e50;
   touch-action: manipulation;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .count-tab.is-selected {
@@ -670,17 +683,23 @@ body {
   border-radius: 6px;
   padding: 1px 8px;
   font-size: 0.78rem;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .stage-title-text {
   font-size: 1rem;
   color: #2c3e50;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .stage-stars-box {
   display: inline-flex;
   align-items: center;
   gap: 2px;
+  flex-shrink: 0;
 }
 
 .stage-star-svg {
@@ -691,6 +710,7 @@ body {
 .stage-example-text {
   font-size: 0.8rem;
   color: #555555;
+  white-space: nowrap;
 }
 
 /* ステージごとのご褒美プレビュー枠 */
@@ -1201,6 +1221,32 @@ body {
     border-width: 5px;
   }
 
+  .blackboard-top-row {
+    gap: 4px;
+  }
+
+  .header-center-info {
+    gap: 4px;
+  }
+
+  .bb-ctrl-btn {
+    font-size: 0.72rem;
+    padding: 3px 7px;
+    border-width: 2.5px;
+    border-radius: 8px;
+    box-shadow: 0 3px 0 #2c3e50;
+  }
+
+  .level-badge {
+    font-size: 0.68rem;
+    padding: 1px 7px;
+  }
+
+  .question-progress {
+    font-size: 0.72rem;
+    padding: 1px 8px;
+  }
+
   .eq-num {
     font-size: 2.1rem;
   }
@@ -1226,27 +1272,137 @@ body {
     padding: 6px 2px;
   }
 
+  .overlay-screen {
+    padding: 6px;
+  }
+
+  .overlay-card {
+    padding: 10px 10px 12px;
+    gap: 7px;
+    border-radius: 16px;
+  }
+
+  .title-blackboard {
+    padding: 6px 8px;
+    border-width: 4px;
+  }
+
+  .title-top-bar {
+    flex-wrap: nowrap;
+    gap: 4px;
+  }
+
+  .title-sub {
+    font-size: 0.72rem;
+    white-space: nowrap;
+  }
+
+  .star-counter-pill {
+    font-size: 0.72rem;
+    padding: 1px 8px;
+    white-space: nowrap;
+  }
+
+  .star-icon-inline {
+    width: 14px;
+    height: 14px;
+  }
+
   .title-main {
-    font-size: 1.45rem;
+    font-size: 1.38rem;
+  }
+
+  .title-desc {
+    font-size: 0.72rem;
+    line-height: 1.25;
+  }
+
+  .extra-nav-row {
+    gap: 5px;
   }
 
   .extra-nav-btn {
-    font-size: 0.78rem;
-    padding: 7px 4px;
+    font-size: 0.74rem;
+    padding: 6px 4px;
+    border-width: 2.5px;
+    box-shadow: 0 3px 0 #2c3e50;
+  }
+
+  .course-and-count-bar {
+    padding: 6px 6px;
+    gap: 5px;
+    border-width: 2.5px;
+  }
+
+  .course-tabs {
+    gap: 4px;
   }
 
   .course-tab {
-    font-size: 0.82rem;
+    font-size: 0.78rem;
     padding: 5px 2px;
+    border-width: 2.5px;
   }
 
-  .stage-row-card {
-    padding: 6px 8px;
+  .count-selector-row {
+    gap: 5px;
+  }
+
+  .count-label {
+    font-size: 0.76rem;
+  }
+
+  .count-tab {
+    font-size: 0.76rem;
+    padding: 2px 8px;
+  }
+
+  .stage-list-container {
     gap: 6px;
   }
 
+  .stage-row-card {
+    padding: 5px 7px;
+    gap: 6px;
+    border-width: 2.5px;
+    border-radius: 12px;
+    box-shadow: 0 3px 0 #2c3e50;
+  }
+
+  .stage-top-line {
+    gap: 5px;
+  }
+
+  .stage-sub-line {
+    gap: 5px;
+  }
+
+  .stage-num-badge {
+    font-size: 0.65rem;
+    padding: 1px 5px;
+  }
+
   .stage-title-text {
-    font-size: 0.88rem;
+    font-size: 0.78rem;
+  }
+
+  .stage-star-svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .stage-example-text {
+    font-size: 0.72rem;
+  }
+
+  .stage-reward-preview {
+    padding: 2px 4px;
+    border-radius: 8px;
+  }
+
+  .stage-reward-icon {
+    width: 28px;
+    height: 28px;
   }
 
   .stage-reward-info {
@@ -1254,8 +1410,11 @@ body {
   }
 
   .stage-play-btn {
-    font-size: 0.85rem;
-    padding: 6px 10px;
+    font-size: 0.78rem;
+    padding: 6px 9px;
+    border-width: 2.5px;
+    border-radius: 10px;
+    box-shadow: 0 3px 0 #2c3e50;
   }
 
   .zukan-grid {
