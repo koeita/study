@@ -99,128 +99,224 @@
   };
 
   // =========================================
-  // ステージ＆限定ご褒美つみき定義（全4コース×5ステージ＝20ステージ）
+  // ステージ＆限定ご褒美つみき定義（全4コース×5ステージ＝20ステージ × 3段階＝全60種）
   // =========================================
   const STAGE_CATALOG = [
-    // たしざんコース（どうぶつシリーズ）
+    // たしざんコース（どうぶつファミリー）
     {
       id: 'add_1', course: 'add', stageNum: 1,
       title: '5までの たしざん', example: '2 ＋ [ ？ ] ＝ 5',
-      toy: { id: 'chick', name: 'ひよこ', color: '#ffe066', shape: 'chick' }
+      toys: {
+        3: { id: 'chick_baby', name: 'ピヨピヨ', color: '#fff3b0', shape: 'chick', tier: 3 },
+        5: { id: 'chick', name: 'ひよこ', color: '#ffe066', shape: 'chick', tier: 5 },
+        10: { id: 'chick_king', name: 'キングひよこ', color: '#ffd166', shape: 'chick', tier: 10 }
+      }
     },
     {
       id: 'add_2', course: 'add', stageNum: 2,
       title: '10を つくろう', example: '4 ＋ [ ？ ] ＝ 10',
-      toy: { id: 'rabbit', name: 'うさぎ', color: '#ffc6ff', shape: 'rabbit' }
+      toys: {
+        3: { id: 'rabbit_baby', name: 'こさぎ', color: '#ffe5ec', shape: 'rabbit', tier: 3 },
+        5: { id: 'rabbit', name: 'うさぎ', color: '#ffc6ff', shape: 'rabbit', tier: 5 },
+        10: { id: 'rabbit_moon', name: 'つきうさぎ', color: '#e0aaff', shape: 'rabbit', tier: 10 }
+      }
     },
     {
       id: 'add_3', course: 'add', stageNum: 3,
       title: '10までの たしざん', example: '3 ＋ 5 ＝ [ ？ ]',
-      toy: { id: 'dog', name: 'こいぬ', color: '#ffd6a5', shape: 'dog' }
+      toys: {
+        3: { id: 'dog_baby', name: 'こいぬ', color: '#ffe8d6', shape: 'dog', tier: 3 },
+        5: { id: 'dog', name: 'わんこ', color: '#ffd6a5', shape: 'dog', tier: 5 },
+        10: { id: 'dog_hero', name: 'ヒーローわんこ', color: '#f4a261', shape: 'dog', tier: 10 }
+      }
     },
     {
       id: 'add_4', course: 'add', stageNum: 4,
       title: 'くりあがりの たしざん', example: '7 ＋ [ ？ ] ＝ 13',
-      toy: { id: 'bear', name: 'こぐま', color: '#d4a373', shape: 'bear' }
+      toys: {
+        3: { id: 'bear_baby', name: 'こぐま', color: '#e6ccb2', shape: 'bear', tier: 3 },
+        5: { id: 'bear', name: 'くまさん', color: '#d4a373', shape: 'bear', tier: 5 },
+        10: { id: 'bear_king', name: 'シロクマキング', color: '#ede0d4', shape: 'bear', tier: 10 }
+      }
     },
     {
       id: 'add_5', course: 'add', stageNum: 5,
       title: 'たしざん マスター', example: '14 ＋ [ ？ ] ＝ 21',
-      toy: { id: 'lion', name: 'ライオン', color: '#f4a261', shape: 'lion' }
+      toys: {
+        3: { id: 'lion_baby', name: 'こライオン', color: '#ffcb77', shape: 'lion', tier: 3 },
+        5: { id: 'lion', name: 'ライオン', color: '#f4a261', shape: 'lion', tier: 5 },
+        10: { id: 'lion_king', name: 'キングライオン', color: '#e76f51', shape: 'lion', tier: 10 }
+      }
     },
 
-    // ひきざんコース（おやつ・フルーツシリーズ）
+    // ひきざんコース（おやつ・フルーツファミリー）
     {
       id: 'sub_1', course: 'sub', stageNum: 1,
       title: '5までの ひきざん', example: '5 － [ ？ ] ＝ 2',
-      toy: { id: 'apple', name: 'りんご', color: '#ff758f', shape: 'apple' }
+      toys: {
+        3: { id: 'apple_green', name: 'あおりんご', color: '#caffbf', shape: 'apple', tier: 3 },
+        5: { id: 'apple', name: 'りんご', color: '#ff758f', shape: 'apple', tier: 5 },
+        10: { id: 'apple_gold', name: 'きんのりんご', color: '#ffd166', shape: 'apple', tier: 10 }
+      }
     },
     {
       id: 'sub_2', course: 'sub', stageNum: 2,
       title: '10からの ひきざん', example: '10 － [ ？ ] ＝ 6',
-      toy: { id: 'banana', name: 'バナナ', color: '#ffe066', shape: 'banana' }
+      toys: {
+        3: { id: 'banana_mini', name: 'ミニバナナ', color: '#fdffb6', shape: 'banana', tier: 3 },
+        5: { id: 'banana', name: 'バナナ', color: '#ffe066', shape: 'banana', tier: 5 },
+        10: { id: 'banana_choco', name: 'チョコバナナ', color: '#d4a373', shape: 'banana', tier: 10 }
+      }
     },
     {
       id: 'sub_3', course: 'sub', stageNum: 3,
       title: '10までの ひきざん', example: '8 － 3 ＝ [ ？ ]',
-      toy: { id: 'donut', name: 'ドーナツ', color: '#e6ccb2', shape: 'donut' }
+      toys: {
+        3: { id: 'donut_mini', name: 'ミニドーナツ', color: '#e6ccb2', shape: 'donut', tier: 3 },
+        5: { id: 'donut', name: 'ドーナツ', color: '#ddb892', shape: 'donut', tier: 5 },
+        10: { id: 'donut_berry', name: 'いちごドーナツ', color: '#ffc6ff', shape: 'donut', tier: 10 }
+      }
     },
     {
       id: 'sub_4', course: 'sub', stageNum: 4,
       title: 'くりさがりの ひきざん', example: '13 － [ ？ ] ＝ 8',
-      toy: { id: 'icecream', name: 'アイス', color: '#a8e6cf', shape: 'icecream' }
+      toys: {
+        3: { id: 'icecream_mini', name: 'ミニソフト', color: '#d8f3dc', shape: 'icecream', tier: 3 },
+        5: { id: 'icecream', name: 'ダブルアイス', color: '#a8e6cf', shape: 'icecream', tier: 5 },
+        10: { id: 'icecream_parfait', name: 'パフェアイス', color: '#ffb5a7', shape: 'icecream', tier: 10 }
+      }
     },
     {
       id: 'sub_5', course: 'sub', stageNum: 5,
       title: 'ひきざん マスター', example: '18 － [ ？ ] ＝ 9',
-      toy: { id: 'cake', name: 'ケーキ', color: '#ffadad', shape: 'cake' }
+      toys: {
+        3: { id: 'cake_cup', name: 'カップケーキ', color: '#ffd6a5', shape: 'cake', tier: 3 },
+        5: { id: 'cake', name: 'ショートケーキ', color: '#ffadad', shape: 'cake', tier: 5 },
+        10: { id: 'cake_party', name: 'パーティケーキ', color: '#ffc6ff', shape: 'cake', tier: 10 }
+      }
     },
 
-    // かけざんコース（のりものシリーズ）
+    // かけざんコース（のりものファミリー）
     {
       id: 'mul_1', course: 'mul', stageNum: 1,
       title: '1・2の だん', example: '2 × [ ？ ] ＝ 8',
-      toy: { id: 'car', name: 'くるま', color: '#a0c4ff', shape: 'car' }
+      toys: {
+        3: { id: 'car_mini', name: 'ミニカー', color: '#bde0fe', shape: 'car', tier: 3 },
+        5: { id: 'car', name: 'くるま', color: '#a0c4ff', shape: 'car', tier: 5 },
+        10: { id: 'car_super', name: 'スーパーカー', color: '#ff758f', shape: 'car', tier: 10 }
+      }
     },
     {
       id: 'mul_2', course: 'mul', stageNum: 2,
       title: '3・4の だん', example: '4 × [ ？ ] ＝ 12',
-      toy: { id: 'bus', name: 'バス', color: '#ffd166', shape: 'bus' }
+      toys: {
+        3: { id: 'bus_mini', name: 'ちいさなバス', color: '#ffeaa7', shape: 'bus', tier: 3 },
+        5: { id: 'bus', name: 'バス', color: '#ffd166', shape: 'bus', tier: 5 },
+        10: { id: 'bus_double', name: '２かいだてバス', color: '#e76f51', shape: 'bus', tier: 10 }
+      }
     },
     {
       id: 'mul_3', course: 'mul', stageNum: 3,
       title: '5・6の だん', example: '6 × 5 ＝ [ ？ ]',
-      toy: { id: 'train', name: 'でんしゃ', color: '#88d49e', shape: 'train' }
+      toys: {
+        3: { id: 'train_steam', name: 'きしゃ', color: '#c7f9cc', shape: 'train', tier: 3 },
+        5: { id: 'train', name: 'でんしゃ', color: '#88d49e', shape: 'train', tier: 5 },
+        10: { id: 'train_bullet', name: 'しんかんせん', color: '#a0c4ff', shape: 'train', tier: 10 }
+      }
     },
     {
       id: 'mul_4', course: 'mul', stageNum: 4,
       title: '7・8・9の だん', example: '8 × [ ？ ] ＝ 56',
-      toy: { id: 'plane', name: 'ひこうき', color: '#caffbf', shape: 'plane' }
+      toys: {
+        3: { id: 'plane_prop', name: 'プロペラき', color: '#d8f3dc', shape: 'plane', tier: 3 },
+        5: { id: 'plane', name: 'ひこうき', color: '#caffbf', shape: 'plane', tier: 5 },
+        10: { id: 'plane_jet', name: 'ジェットき', color: '#90e0ef', shape: 'plane', tier: 10 }
+      }
     },
     {
       id: 'mul_5', course: 'mul', stageNum: 5,
       title: 'かけざん マスター', example: '7 × 9 ＝ [ ？ ]',
-      toy: { id: 'rocket', name: 'ロケット', color: '#fdffb6', shape: 'rocket' }
+      toys: {
+        3: { id: 'rocket_mini', name: 'ちびロケット', color: '#fdffb6', shape: 'rocket', tier: 3 },
+        5: { id: 'rocket', name: 'ロケット', color: '#ffd166', shape: 'rocket', tier: 5 },
+        10: { id: 'rocket_shuttle', name: 'スペースシャトル', color: '#f8f9fa', shape: 'rocket', tier: 10 }
+      }
     },
 
-    // わりざんコース（たからものシリーズ）
+    // わりざんコース（たからもの・ファンタジーファミリー）
     {
       id: 'div_1', course: 'div', stageNum: 1,
       title: '2で わる わりざん', example: '6 ÷ [ ？ ] ＝ 3',
-      toy: { id: 'flower', name: 'おはな', color: '#ffc6ff', shape: 'flower' }
+      toys: {
+        3: { id: 'flower_bud', name: 'つぼみ', color: '#ffd6a5', shape: 'flower', tier: 3 },
+        5: { id: 'flower', name: 'おはな', color: '#ffc6ff', shape: 'flower', tier: 5 },
+        10: { id: 'flower_rainbow', name: 'にじのはな', color: '#a0c4ff', shape: 'flower', tier: 10 }
+      }
     },
     {
       id: 'div_2', course: 'div', stageNum: 2,
       title: '3・4で わる わりざん', example: '12 ÷ [ ？ ] ＝ 4',
-      toy: { id: 'gem', name: 'エメラルド', color: '#80ed99', shape: 'gem' }
+      toys: {
+        3: { id: 'gem_sapphire', name: 'サファイア', color: '#90e0ef', shape: 'gem', tier: 3 },
+        5: { id: 'gem', name: 'エメラルド', color: '#80ed99', shape: 'gem', tier: 5 },
+        10: { id: 'gem_diamond', name: 'ダイヤ', color: '#e0aaff', shape: 'gem', tier: 10 }
+      }
     },
     {
       id: 'div_3', course: 'div', stageNum: 3,
       title: '5・6で わる わりざん', example: '18 ÷ 6 ＝ [ ？ ]',
-      toy: { id: 'star', name: 'ほし', color: '#f4d06f', shape: 'star' }
+      toys: {
+        3: { id: 'star_silver', name: 'ぎんのほし', color: '#dee2e6', shape: 'star', tier: 3 },
+        5: { id: 'star', name: 'きんのほし', color: '#f4d06f', shape: 'star', tier: 5 },
+        10: { id: 'star_shooting', name: 'ながれぼし', color: '#ffcb77', shape: 'star', tier: 10 }
+      }
     },
     {
       id: 'div_4', course: 'div', stageNum: 4,
       title: '7・8・9で わる わりざん', example: '24 ÷ [ ？ ] ＝ 3',
-      toy: { id: 'castle', name: 'おしろ', color: '#e6ccb2', shape: 'castle' }
+      toys: {
+        3: { id: 'castle_house', name: 'こがたのおうち', color: '#ffe5d9', shape: 'castle', tier: 3 },
+        5: { id: 'castle', name: 'おしろ', color: '#e6ccb2', shape: 'castle', tier: 5 },
+        10: { id: 'castle_sky', name: 'きょだいじょう', color: '#b7b7a4', shape: 'castle', tier: 10 }
+      }
     },
     {
       id: 'div_5', course: 'div', stageNum: 5,
       title: 'わりざん マスター', example: '36 ÷ [ ？ ] ＝ 6',
-      toy: { id: 'crown', name: 'おうかん', color: '#f4a261', shape: 'crown' }
+      toys: {
+        3: { id: 'crown_silver', name: 'ぎんのかんむり', color: '#e9ecef', shape: 'crown', tier: 3 },
+        5: { id: 'crown', name: 'きんのかんむり', color: '#f4a261', shape: 'crown', tier: 5 },
+        10: { id: 'crown_king', name: 'おうさまかんむり', color: '#ffd700', shape: 'crown', tier: 10 }
+      }
     }
   ];
 
-  // おもちゃカタログ（全20種）
-  const TOY_CATALOG = STAGE_CATALOG.map((s) => ({
-    ...s.toy,
-    stageId: s.id,
-    stageLabel: `${COURSE_NAMES[s.course]} ステージ${s.stageNum}`
-  }));
+  // おもちゃカタログ（全60種：全20ステージ × 3段階）
+  const QUESTION_COUNTS = [3, 5, 10];
+  const TOY_CATALOG = [];
+  STAGE_CATALOG.forEach((st) => {
+    QUESTION_COUNTS.forEach((cnt) => {
+      const toy = st.toys[cnt];
+      if (toy) {
+        TOY_CATALOG.push({
+          ...toy,
+          count: cnt,
+          stageId: st.id,
+          stageRef: st,
+          stageLabel: `${COURSE_NAMES[st.course]} ステージ${st.stageNum}`,
+          condLabel: `${cnt}もんクリア`
+        });
+      }
+    });
+  });
 
   // =========================================
   // 案C：すうじ積み木 きせかえスキン定義（全5種）
   // =========================================
+  function isStageClearedAnyCount(sd, stageId) {
+    return [3, 5, 10].some((c) => (sd.stageStars[`${stageId}_${c}`] || 0) >= 1) || (sd.stageStars[stageId] || 0) >= 1;
+  }
+
   const SKIN_CATALOG = [
     {
       id: 'standard',
@@ -233,34 +329,34 @@
     {
       id: 'gold',
       name: 'きんぴか ゴールド',
-      condText: 'たしざん ステージ5 クリア または ほし 10こ',
+      condText: 'たしざん ステージ5 クリア または ほし 15こ',
       previewBg: '#ffd700',
       previewText: '#5c3c00',
-      checkUnlock: (sd, stars) => (sd.stageStars['add_5'] >= 1) || stars >= 10
+      checkUnlock: (sd, stars) => isStageClearedAnyCount(sd, 'add_5') || stars >= 15
     },
     {
       id: 'sweets',
       name: 'おやつ スイーツ',
-      condText: 'ひきざん ステージ5 クリア または ほし 20こ',
+      condText: 'ひきざん ステージ5 クリア または ほし 30こ',
       previewBg: '#ffadad',
       previewText: '#5a2a27',
-      checkUnlock: (sd, stars) => (sd.stageStars['sub_5'] >= 1) || stars >= 20
+      checkUnlock: (sd, stars) => isStageClearedAnyCount(sd, 'sub_5') || stars >= 30
     },
     {
       id: 'night',
       name: 'きらきら ほしぞら',
-      condText: 'かけざん ステージ5 クリア または ほし 30こ',
+      condText: 'かけざん ステージ5 クリア または ほし 50こ',
       previewBg: '#1d3557',
       previewText: '#ffe066',
-      checkUnlock: (sd, stars) => (sd.stageStars['mul_5'] >= 1) || stars >= 30
+      checkUnlock: (sd, stars) => isStageClearedAnyCount(sd, 'mul_5') || stars >= 50
     },
     {
       id: 'rainbow',
       name: 'にじいろ マスター',
-      condText: 'わりざん ステージ5 クリア または ほし 40こ',
+      condText: 'わりざん ステージ5 クリア または ほし 80こ',
       previewBg: '#a8e6cf',
       previewText: '#2c3e50',
-      checkUnlock: (sd, stars) => (sd.stageStars['div_5'] >= 1) || stars >= 40
+      checkUnlock: (sd, stars) => isStageClearedAnyCount(sd, 'div_5') || stars >= 80
     }
   ];
 
@@ -269,8 +365,8 @@
   // =========================================
   const SAVE_KEY = 'suuji_tsumiki_save_v2';
   let saveData = {
-    stageStars: {},        // { 'add_1': 3, ... }
-    unlockedToys: [],      // ['chick', ...]
+    stageStars: {},        // { 'add_1_3': 3, 'add_1_5': 2, 'add_1_10': 3, ... }
+    unlockedToys: [],      // ['chick_baby', 'chick', ...]
     unlockedSkins: ['standard'],
     currentSkin: 'standard',
     totalClears: 0
@@ -296,6 +392,19 @@
     if (!saveData.stageStars || typeof saveData.stageStars !== 'object') {
       saveData.stageStars = {};
     }
+
+    // 旧データ（キーが 'add_1' 等）を 'add_1_5' にマイグレーション
+    Object.keys(saveData.stageStars).forEach((key) => {
+      if (/^[a-z]+_\d+$/.test(key)) {
+        const val = saveData.stageStars[key];
+        const newKey = `${key}_5`;
+        if (saveData.stageStars[newKey] === undefined) {
+          saveData.stageStars[newKey] = val;
+        }
+        delete saveData.stageStars[key];
+      }
+    });
+
     if (!Array.isArray(saveData.unlockedToys)) {
       saveData.unlockedToys = [];
     }
@@ -306,11 +415,15 @@
       saveData.currentSkin = 'standard';
     }
 
-    // すでにステージクリア済みのものがあればおもちゃも同期
+    // すでに各問題数をクリア済みのものがあれば該当おもちゃも同期
     STAGE_CATALOG.forEach((st) => {
-      if ((saveData.stageStars[st.id] || 0) >= 1 && !saveData.unlockedToys.includes(st.toy.id)) {
-        saveData.unlockedToys.push(st.toy.id);
-      }
+      [3, 5, 10].forEach((cnt) => {
+        const stars = saveData.stageStars[`${st.id}_${cnt}`] || 0;
+        const toy = st.toys[cnt];
+        if (stars >= 1 && toy && !saveData.unlockedToys.includes(toy.id)) {
+          saveData.unlockedToys.push(toy.id);
+        }
+      });
     });
 
     // スキン解放チェック
@@ -338,11 +451,11 @@
     refreshAllTitleUI();
   }
 
-  // ステージが解放されているか判定（ステージ1は常時解放、ステージ2以降は前ステージの星>=1で解放）
+  // ステージが解放されているか判定（ステージ1は常時解放、ステージ2以降は前ステージのいずれかの問題数で星>=1で解放）
   function isStageUnlocked(stageObj) {
     if (stageObj.stageNum === 1) return true;
     const prevId = `${stageObj.course}_${stageObj.stageNum - 1}`;
-    return (saveData.stageStars[prevId] || 0) >= 1;
+    return [3, 5, 10].some((c) => (saveData.stageStars[`${prevId}_${c}`] || 0) >= 1);
   }
 
   // ゲーム進行状態
@@ -434,143 +547,218 @@
     const stroke = COLORS.navy;
     const subWhite = isUnlocked ? '#ffffff' : '#d0d0d0';
     const accentRed = isUnlocked ? '#ff758f' : '#a0a0a0';
+    const goldColor = isUnlocked ? '#ffd166' : '#cccccc';
     const s = toy.shape;
+    const tier = toy.tier || 5;
+
+    // 10問クリア用の王冠・スター・オーラ装飾パーツ
+    const crownDecoration = tier === 10 ? `
+      <polygon points="30,4 25,12 35,12" fill="${goldColor}" stroke="${stroke}" stroke-width="1.8" />
+      <polygon points="21,7 23,13 18,13" fill="${goldColor}" stroke="${stroke}" stroke-width="1.6" />
+      <polygon points="39,7 42,13 37,13" fill="${goldColor}" stroke="${stroke}" stroke-width="1.6" />
+      <circle cx="30" cy="5" r="1.5" fill="${accentRed}" />
+    ` : '';
+
+    const babyRibbon = tier === 3 ? `
+      <polygon points="20,16 26,20 20,24" fill="${accentRed}" stroke="${stroke}" stroke-width="1.5" />
+      <polygon points="40,16 34,20 40,24" fill="${accentRed}" stroke="${stroke}" stroke-width="1.5" />
+      <circle cx="30" cy="20" r="2.2" fill="${accentRed}" stroke="${stroke}" stroke-width="1.5" />
+    ` : '';
 
     if (s === 'chick') {
+      const scaleR = tier === 3 ? 15 : (tier === 10 ? 21 : 18);
+      const cy = tier === 3 ? 36 : 33;
       return `<svg viewBox="0 0 60 60" width="100%" height="100%">
-        <circle cx="30" cy="33" r="19" fill="${color}" stroke="${stroke}" stroke-width="3"/>
-        <circle cx="23" cy="29" r="2.8" fill="${stroke}"/>
-        <circle cx="37" cy="29" r="2.8" fill="${stroke}"/>
-        <polygon points="30,32 25,37 35,37" fill="${accentRed}" stroke="${stroke}" stroke-width="2"/>
+        ${crownDecoration}
+        <circle cx="30" cy="${cy}" r="${scaleR}" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        <circle cx="${30 - scaleR * 0.4}" cy="${cy - 3}" r="2.6" fill="${stroke}"/>
+        <circle cx="${30 + scaleR * 0.4}" cy="${cy - 3}" r="2.6" fill="${stroke}"/>
+        <polygon points="30,${cy} ${30 - 5},${cy + 5} ${30 + 5},${cy + 5}" fill="${accentRed}" stroke="${stroke}" stroke-width="2"/>
+        ${tier === 10 ? `<path d="M 12 34 Q 18 28 20 34" stroke="${stroke}" stroke-width="2.5" fill="none" />
+          <path d="M 48 34 Q 42 28 40 34" stroke="${stroke}" stroke-width="2.5" fill="none" />` : ''}
       </svg>`;
     } else if (s === 'rabbit') {
+      const earH = tier === 3 ? 8 : (tier === 10 ? 14 : 11);
       return `<svg viewBox="0 0 60 60" width="100%" height="100%">
-        <ellipse cx="22" cy="16" rx="5" ry="11" fill="${color}" stroke="${stroke}" stroke-width="3"/>
-        <ellipse cx="38" cy="16" rx="5" ry="11" fill="${color}" stroke="${stroke}" stroke-width="3"/>
-        <rect x="14" y="23" width="32" height="27" rx="12" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        ${crownDecoration}
+        <ellipse cx="22" cy="${20 - earH * 0.4}" rx="5" ry="${earH}" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        <ellipse cx="38" cy="${20 - earH * 0.4}" rx="5" ry="${earH}" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        <rect x="14" y="24" width="32" height="26" rx="12" fill="${color}" stroke="${stroke}" stroke-width="3"/>
         <circle cx="24" cy="34" r="2.8" fill="${stroke}"/>
         <circle cx="36" cy="34" r="2.8" fill="${stroke}"/>
         <circle cx="30" cy="40" r="2.5" fill="${accentRed}"/>
+        ${tier === 10 ? `<polygon points="30,12 32,16 36,17 33,20 34,24 30,22 26,24 27,20 24,17 28,16" fill="${goldColor}" stroke="${stroke}" stroke-width="1.5" />` : ''}
       </svg>`;
     } else if (s === 'dog') {
       return `<svg viewBox="0 0 60 60" width="100%" height="100%">
-        <rect x="12" y="16" width="36" height="32" rx="8" fill="${color}" stroke="${stroke}" stroke-width="3"/>
-        <circle cx="15" cy="18" r="7" fill="${color}" stroke="${stroke}" stroke-width="3"/>
-        <circle cx="45" cy="18" r="7" fill="${color}" stroke="${stroke}" stroke-width="3"/>
-        <circle cx="23" cy="30" r="3" fill="${stroke}"/>
-        <circle cx="37" cy="30" r="3" fill="${stroke}"/>
-        <ellipse cx="30" cy="38" rx="4.5" ry="3" fill="${stroke}"/>
+        ${crownDecoration}
+        <rect x="12" y="18" width="36" height="30" rx="8" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        <circle cx="15" cy="20" r="7" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        <circle cx="45" cy="20" r="7" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        <circle cx="23" cy="31" r="3" fill="${stroke}"/>
+        <circle cx="37" cy="31" r="3" fill="${stroke}"/>
+        <ellipse cx="30" cy="39" rx="4.5" ry="3" fill="${stroke}"/>
+        ${tier === 3 ? `<circle cx="30" cy="18" r="3" fill="${accentRed}" />` : ''}
+        ${tier === 10 ? `<polygon points="30,22 34,26 30,30 26,26" fill="${accentRed}" stroke="${stroke}" stroke-width="1.5" />` : ''}
       </svg>`;
     } else if (s === 'bear') {
       return `<svg viewBox="0 0 60 60" width="100%" height="100%">
-        <circle cx="16" cy="16" r="7" fill="${color}" stroke="${stroke}" stroke-width="3"/>
-        <circle cx="44" cy="16" r="7" fill="${color}" stroke="${stroke}" stroke-width="3"/>
-        <rect x="12" y="17" width="36" height="31" rx="12" fill="${color}" stroke="${stroke}" stroke-width="3"/>
-        <ellipse cx="30" cy="37" rx="8" ry="6" fill="${subWhite}" stroke="${stroke}" stroke-width="2"/>
-        <circle cx="23" cy="28" r="2.8" fill="${stroke}"/>
-        <circle cx="37" cy="28" r="2.8" fill="${stroke}"/>
-        <circle cx="30" cy="35" r="2.8" fill="${stroke}"/>
+        ${crownDecoration}
+        <circle cx="16" cy="18" r="7" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        <circle cx="44" cy="18" r="7" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        <rect x="12" y="19" width="36" height="30" rx="12" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        <ellipse cx="30" cy="38" rx="8" ry="6" fill="${subWhite}" stroke="${stroke}" stroke-width="2"/>
+        <circle cx="23" cy="29" r="2.8" fill="${stroke}"/>
+        <circle cx="37" cy="29" r="2.8" fill="${stroke}"/>
+        <circle cx="30" cy="36" r="2.8" fill="${stroke}"/>
       </svg>`;
     } else if (s === 'lion') {
+      const maneR = tier === 3 ? 18 : (tier === 10 ? 24 : 21);
       return `<svg viewBox="0 0 60 60" width="100%" height="100%">
-        <circle cx="30" cy="31" r="22" fill="${accentRed}" stroke="${stroke}" stroke-width="3"/>
-        <circle cx="30" cy="31" r="15" fill="${color}" stroke="${stroke}" stroke-width="3"/>
-        <circle cx="24" cy="28" r="2.5" fill="${stroke}"/>
-        <circle cx="36" cy="28" r="2.5" fill="${stroke}"/>
-        <polygon points="30,33 27,37 33,37" fill="${stroke}"/>
+        ${crownDecoration}
+        <circle cx="30" cy="33" r="${maneR}" fill="${accentRed}" stroke="${stroke}" stroke-width="3"/>
+        <circle cx="30" cy="33" r="14" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        <circle cx="24" cy="30" r="2.5" fill="${stroke}"/>
+        <circle cx="36" cy="30" r="2.5" fill="${stroke}"/>
+        <polygon points="30,35 27,39 33,39" fill="${stroke}"/>
       </svg>`;
     } else if (s === 'apple') {
+      const leafColor = isUnlocked ? '#88d49e' : '#bbbbbb';
       return `<svg viewBox="0 0 60 60" width="100%" height="100%">
-        <rect x="28" y="8" width="4" height="10" rx="2" fill="${stroke}"/>
-        <circle cx="24" cy="34" r="15" fill="${color}" stroke="${stroke}" stroke-width="3"/>
-        <circle cx="36" cy="34" r="15" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        ${crownDecoration}
+        <rect x="28" y="10" width="4" height="10" rx="2" fill="${stroke}"/>
+        <ellipse cx="35" cy="12" rx="5" ry="3" fill="${leafColor}" stroke="${stroke}" stroke-width="1.8" />
+        <circle cx="24" cy="35" r="14" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        <circle cx="36" cy="35" r="14" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        ${tier === 10 ? `<circle cx="30" cy="35" r="4" fill="${subWhite}" opacity="0.8" />` : ''}
       </svg>`;
     } else if (s === 'banana') {
       return `<svg viewBox="0 0 60 60" width="100%" height="100%">
-        <path d="M 16 42 Q 36 46 46 16 Q 36 30 16 32 Z" fill="${color}" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/>
+        ${crownDecoration}
+        <path d="M 16 44 Q 36 48 46 18 Q 36 32 16 34 Z" fill="${color}" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/>
+        ${tier === 10 ? `<path d="M 16 44 Q 24 46 30 36 L 24 33 Z" fill="#6f4e37" stroke="${stroke}" stroke-width="2" />` : ''}
       </svg>`;
     } else if (s === 'donut') {
       return `<svg viewBox="0 0 60 60" width="100%" height="100%">
-        <circle cx="30" cy="31" r="19" fill="${color}" stroke="${stroke}" stroke-width="3"/>
-        <circle cx="30" cy="31" r="7" fill="${subWhite}" stroke="${stroke}" stroke-width="3"/>
+        ${crownDecoration}
+        <circle cx="30" cy="33" r="18" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        <circle cx="30" cy="33" r="6.5" fill="${subWhite}" stroke="${stroke}" stroke-width="3"/>
+        ${tier === 10 ? `
+          <circle cx="24" cy="24" r="2" fill="${accentRed}" />
+          <circle cx="36" cy="24" r="2" fill="${goldColor}" />
+          <circle cx="38" cy="36" r="2" fill="#88d49e" />
+          <circle cx="22" cy="36" r="2" fill="#a0c4ff" />
+        ` : ''}
       </svg>`;
     } else if (s === 'icecream') {
       return `<svg viewBox="0 0 60 60" width="100%" height="100%">
-        <polygon points="20,30 40,30 30,52" fill="#f4a261" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/>
-        <circle cx="30" cy="24" r="13" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        ${crownDecoration}
+        <polygon points="20,32 40,32 30,54" fill="#f4a261" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/>
+        <circle cx="30" cy="26" r="13" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        ${tier >= 5 ? `<circle cx="30" cy="18" r="4" fill="${accentRed}" stroke="${stroke}" stroke-width="2"/>` : ''}
+        ${tier === 10 ? `<circle cx="23" cy="26" r="6" fill="#ffd6a5" stroke="${stroke}" stroke-width="2"/>` : ''}
       </svg>`;
     } else if (s === 'cake') {
       return `<svg viewBox="0 0 60 60" width="100%" height="100%">
-        <rect x="12" y="26" width="36" height="22" rx="4" fill="${subWhite}" stroke="${stroke}" stroke-width="3"/>
-        <rect x="12" y="26" width="36" height="9" rx="3" fill="${color}" stroke="${stroke}" stroke-width="3"/>
-        <circle cx="30" cy="18" r="6" fill="${accentRed}" stroke="${stroke}" stroke-width="3"/>
+        ${crownDecoration}
+        <rect x="12" y="28" width="36" height="22" rx="4" fill="${subWhite}" stroke="${stroke}" stroke-width="3"/>
+        <rect x="12" y="28" width="36" height="8" rx="3" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        <circle cx="30" cy="20" r="6" fill="${accentRed}" stroke="${stroke}" stroke-width="3"/>
+        ${tier === 10 ? `<circle cx="20" cy="22" r="4" fill="${goldColor}" stroke="${stroke}" stroke-width="2"/>
+          <circle cx="40" cy="22" r="4" fill="${goldColor}" stroke="${stroke}" stroke-width="2"/>` : ''}
       </svg>`;
     } else if (s === 'car') {
       return `<svg viewBox="0 0 60 60" width="100%" height="100%">
-        <rect x="10" y="26" width="40" height="16" rx="4" fill="${color}" stroke="${stroke}" stroke-width="3"/>
-        <rect x="18" y="16" width="24" height="12" rx="4" fill="${subWhite}" stroke="${stroke}" stroke-width="3"/>
-        <circle cx="19" cy="44" r="6" fill="${stroke}"/>
-        <circle cx="41" cy="44" r="6" fill="${stroke}"/>
-      </svg>`;
-    } else if (s === 'bus') {
-      return `<svg viewBox="0 0 60 60" width="100%" height="100%">
-        <rect x="10" y="16" width="40" height="26" rx="5" fill="${color}" stroke="${stroke}" stroke-width="3"/>
-        <rect x="15" y="21" width="12" height="9" rx="2" fill="${subWhite}" stroke="${stroke}" stroke-width="2.5"/>
-        <rect x="33" y="21" width="12" height="9" rx="2" fill="${subWhite}" stroke="${stroke}" stroke-width="2.5"/>
+        ${crownDecoration}
+        <rect x="10" y="27" width="40" height="15" rx="4" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        <rect x="18" y="17" width="24" height="12" rx="4" fill="${subWhite}" stroke="${stroke}" stroke-width="3"/>
         <circle cx="19" cy="44" r="5.5" fill="${stroke}"/>
         <circle cx="41" cy="44" r="5.5" fill="${stroke}"/>
+        ${tier === 10 ? `<polygon points="46,24 53,27 46,30" fill="${goldColor}" stroke="${stroke}" stroke-width="1.8" />` : ''}
+      </svg>`;
+    } else if (s === 'bus') {
+      const busH = tier === 10 ? 32 : 25;
+      const busY = tier === 10 ? 11 : 17;
+      return `<svg viewBox="0 0 60 60" width="100%" height="100%">
+        ${crownDecoration}
+        <rect x="10" y="${busY}" width="40" height="${busH}" rx="5" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        <rect x="15" y="${busY + 5}" width="12" height="8" rx="2" fill="${subWhite}" stroke="${stroke}" stroke-width="2"/>
+        <rect x="33" y="${busY + 5}" width="12" height="8" rx="2" fill="${subWhite}" stroke="${stroke}" stroke-width="2"/>
+        ${tier === 10 ? `
+          <rect x="15" y="${busY + 16}" width="12" height="8" rx="2" fill="${subWhite}" stroke="${stroke}" stroke-width="2"/>
+          <rect x="33" y="${busY + 16}" width="12" height="8" rx="2" fill="${subWhite}" stroke="${stroke}" stroke-width="2"/>
+        ` : ''}
+        <circle cx="19" cy="45" r="5" fill="${stroke}"/>
+        <circle cx="41" cy="45" r="5" fill="${stroke}"/>
       </svg>`;
     } else if (s === 'train') {
       return `<svg viewBox="0 0 60 60" width="100%" height="100%">
-        <rect x="13" y="12" width="34" height="32" rx="5" fill="${color}" stroke="${stroke}" stroke-width="3"/>
-        <rect x="19" y="18" width="22" height="11" rx="2" fill="${subWhite}" stroke="${stroke}" stroke-width="2.5"/>
+        ${crownDecoration}
+        <rect x="13" y="14" width="34" height="30" rx="${tier === 10 ? 12 : 5}" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        <rect x="19" y="19" width="22" height="10" rx="2" fill="${subWhite}" stroke="${stroke}" stroke-width="2.5"/>
         <circle cx="22" cy="36" r="3" fill="${subWhite}" stroke="${stroke}" stroke-width="2"/>
         <circle cx="38" cy="36" r="3" fill="${subWhite}" stroke="${stroke}" stroke-width="2"/>
-        <line x1="16" y1="49" x2="44" y2="49" stroke="${stroke}" stroke-width="4" stroke-linecap="round"/>
+        <line x1="16" y1="48" x2="44" y2="48" stroke="${stroke}" stroke-width="4" stroke-linecap="round"/>
       </svg>`;
     } else if (s === 'plane') {
       return `<svg viewBox="0 0 60 60" width="100%" height="100%">
-        <polygon points="30,10 38,46 22,46" fill="${subWhite}" stroke="${stroke}" stroke-width="3"/>
-        <polygon points="8,28 52,28 52,36 8,36" fill="${color}" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/>
+        ${crownDecoration}
+        <polygon points="30,11 38,46 22,46" fill="${subWhite}" stroke="${stroke}" stroke-width="3"/>
+        <polygon points="8,29 52,29 52,36 8,36" fill="${color}" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/>
+        ${tier === 10 ? `<polygon points="26,16 34,16 30,8" fill="${accentRed}" stroke="${stroke}" stroke-width="2"/>` : ''}
       </svg>`;
     } else if (s === 'rocket') {
       return `<svg viewBox="0 0 60 60" width="100%" height="100%">
-        <path d="M 30 8 Q 42 24 40 44 L 20 44 Q 18 24 30 8 Z" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        ${crownDecoration}
+        <path d="M 30 10 Q 42 25 40 44 L 20 44 Q 18 25 30 10 Z" fill="${color}" stroke="${stroke}" stroke-width="3"/>
         <polygon points="16,36 10,48 20,44" fill="${accentRed}" stroke="${stroke}" stroke-width="3"/>
         <polygon points="44,36 50,48 40,44" fill="${accentRed}" stroke="${stroke}" stroke-width="3"/>
-        <circle cx="30" cy="26" r="5" fill="${subWhite}" stroke="${stroke}" stroke-width="2.5"/>
+        <circle cx="30" cy="27" r="5" fill="${subWhite}" stroke="${stroke}" stroke-width="2.5"/>
       </svg>`;
     } else if (s === 'flower') {
       return `<svg viewBox="0 0 60 60" width="100%" height="100%">
-        <circle cx="30" cy="17" r="9" fill="${color}" stroke="${stroke}" stroke-width="2.5"/>
-        <circle cx="30" cy="43" r="9" fill="${color}" stroke="${stroke}" stroke-width="2.5"/>
-        <circle cx="17" cy="30" r="9" fill="${color}" stroke="${stroke}" stroke-width="2.5"/>
-        <circle cx="43" cy="30" r="9" fill="${color}" stroke="${stroke}" stroke-width="2.5"/>
-        <circle cx="30" cy="30" r="8" fill="#ffe066" stroke="${stroke}" stroke-width="2.5"/>
+        ${crownDecoration}
+        <circle cx="30" cy="18" r="8" fill="${color}" stroke="${stroke}" stroke-width="2.5"/>
+        <circle cx="30" cy="42" r="8" fill="${color}" stroke="${stroke}" stroke-width="2.5"/>
+        <circle cx="18" cy="30" r="8" fill="${color}" stroke="${stroke}" stroke-width="2.5"/>
+        <circle cx="42" cy="30" r="8" fill="${color}" stroke="${stroke}" stroke-width="2.5"/>
+        <circle cx="30" cy="30" r="7.5" fill="${goldColor}" stroke="${stroke}" stroke-width="2.5"/>
       </svg>`;
     } else if (s === 'gem') {
       return `<svg viewBox="0 0 60 60" width="100%" height="100%">
-        <polygon points="20,14 40,14 50,26 30,48 10,26" fill="${color}" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/>
-        <line x1="10" y1="26" x2="50" y2="26" stroke="${stroke}" stroke-width="2.5"/>
+        ${crownDecoration}
+        <polygon points="20,16 40,16 50,27 30,48 10,27" fill="${color}" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/>
+        <line x1="10" y1="27" x2="50" y2="27" stroke="${stroke}" stroke-width="2.5"/>
+        ${tier === 10 ? `<line x1="20" y1="16" x2="30" y2="48" stroke="${stroke}" stroke-width="2" />
+          <line x1="40" y1="16" x2="30" y2="48" stroke="${stroke}" stroke-width="2" />` : ''}
       </svg>`;
     } else if (s === 'star') {
       return `<svg viewBox="0 0 60 60" width="100%" height="100%">
-        <polygon points="30,8 36,22 51,24 40,34 43,49 30,41 17,49 20,34 9,24 24,22" fill="${color}" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/>
+        ${crownDecoration}
+        <polygon points="30,9 36,22 51,24 40,34 43,49 30,41 17,49 20,34 9,24 24,22" fill="${color}" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/>
+        ${tier === 10 ? `<circle cx="30" cy="30" r="5" fill="${subWhite}" opacity="0.8" />` : ''}
       </svg>`;
     } else if (s === 'castle') {
       return `<svg viewBox="0 0 60 60" width="100%" height="100%">
-        <rect x="14" y="24" width="32" height="24" fill="${color}" stroke="${stroke}" stroke-width="3"/>
-        <polygon points="12,24 22,12 32,24" fill="${accentRed}" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/>
-        <polygon points="28,24 38,12 48,24" fill="${accentRed}" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/>
+        ${crownDecoration}
+        <rect x="14" y="25" width="32" height="23" fill="${color}" stroke="${stroke}" stroke-width="3"/>
+        <polygon points="12,25 22,13 32,25" fill="${accentRed}" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/>
+        <polygon points="28,25 38,13 48,25" fill="${accentRed}" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/>
         <rect x="25" y="34" width="10" height="14" rx="4" fill="${subWhite}" stroke="${stroke}" stroke-width="2.5"/>
       </svg>`;
     } else {
       // crown
       return `<svg viewBox="0 0 60 60" width="100%" height="100%">
-        <polygon points="10,44 12,20 24,32 30,14 36,32 48,20 50,44" fill="${color}" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/>
+        <polygon points="10,44 12,21 24,32 30,15 36,32 48,21 50,44" fill="${color}" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/>
         <circle cx="30" cy="36" r="3.5" fill="${accentRed}" stroke="${stroke}" stroke-width="2"/>
+        ${tier === 10 ? `
+          <circle cx="13" cy="21" r="2.5" fill="${goldColor}" stroke="${stroke}" stroke-width="1.5" />
+          <circle cx="30" cy="15" r="2.5" fill="${goldColor}" stroke="${stroke}" stroke-width="1.5" />
+          <circle cx="47" cy="21" r="2.5" fill="${goldColor}" stroke="${stroke}" stroke-width="1.5" />
+        ` : ''}
       </svg>`;
     }
+  }
   }
 
   // =========================================
@@ -590,14 +778,18 @@
     updateSandboxToySelector();
   }
 
+  let currentZukanFilter = 'all';
+
   function renderStageList() {
     stageListContainerEl.innerHTML = '';
     const stages = STAGE_CATALOG.filter((s) => s.course === selectedCourseTab);
 
     stages.forEach((st) => {
       const unlocked = isStageUnlocked(st);
-      const stars = saveData.stageStars[st.id] || 0;
-      const hasToy = saveData.unlockedToys.includes(st.toy.id);
+      const currentStarKey = `${st.id}_${totalQuestions}`;
+      const stars = saveData.stageStars[currentStarKey] || 0;
+      const currentToy = st.toys[totalQuestions] || st.toys[5];
+      const hasToy = saveData.unlockedToys.includes(currentToy.id);
 
       const row = document.createElement('div');
       row.className = `stage-row-card ${unlocked ? '' : 'is-locked'}`;
@@ -607,10 +799,17 @@
         starsHtml += generateStarSVG(i <= stars, 'stage-star-svg');
       }
 
-      const toySvg = generateToySVG(st.toy, hasToy);
-      const rewardStatusText = hasToy ? 'ゲットずみ！' : 'クリアで ゲット！';
+      const toySvg = generateToySVG(currentToy, hasToy);
+      const rewardStatusText = hasToy ? 'ゲットずみ！' : `${totalQuestions}もんで ゲット！`;
       const rewardStatusClass = hasToy ? 'stage-reward-tag is-got' : 'stage-reward-tag';
-      const rewardToyName = hasToy ? st.toy.name : `「${st.toy.name}」`;
+      const rewardToyName = hasToy ? currentToy.name : `「${currentToy.name}」`;
+
+      const countsBadgesHtml = [3, 5, 10].map((cnt) => {
+        const cStars = saveData.stageStars[`${st.id}_${cnt}`] || 0;
+        const isCur = cnt === totalQuestions;
+        const starsStr = '★'.repeat(cStars) + '☆'.repeat(3 - cStars);
+        return `<span class="count-star-badge ${isCur ? 'is-current' : ''}">${cnt}もん: ${starsStr}</span>`;
+      }).join('');
 
       row.innerHTML = `
         <div class="stage-left-info">
@@ -619,8 +818,11 @@
             <span class="stage-title-text">${st.title}</span>
           </div>
           <div class="stage-sub-line">
-            <div class="stage-stars-box" aria-label="ほし ${stars}こ">${starsHtml}</div>
+            <div class="stage-stars-box" aria-label="${totalQuestions}もん ほし ${stars}こ">${starsHtml}</div>
             <span class="stage-example-text">${st.example}</span>
+          </div>
+          <div class="stage-counts-stars-row">
+            ${countsBadgesHtml}
           </div>
         </div>
 
@@ -653,8 +855,12 @@
     const unlockedCount = saveData.unlockedToys.length;
     zukanTotalCollectedEl.textContent = String(unlockedCount);
 
+    const filteredToys = currentZukanFilter === 'all'
+      ? TOY_CATALOG
+      : TOY_CATALOG.filter((t) => String(t.count) === currentZukanFilter);
+
     zukanGridEl.innerHTML = '';
-    TOY_CATALOG.forEach((toy) => {
+    filteredToys.forEach((toy) => {
       const isUnlocked = saveData.unlockedToys.includes(toy.id);
       const card = document.createElement('div');
       card.className = `zukan-item ${isUnlocked ? '' : 'is-locked'}`;
@@ -664,6 +870,7 @@
         <div class="zukan-icon-wrap">${iconSvg}</div>
         <span class="zukan-item-name">${isUnlocked ? toy.name : '？？？'}</span>
         <span class="zukan-item-stage">${toy.stageLabel}</span>
+        <span class="count-star-badge" style="font-size: 0.68rem; margin-top: 2px;">${toy.condLabel}</span>
       `;
       zukanGridEl.appendChild(card);
     });
@@ -1417,13 +1624,14 @@
     if (finalScore === 100) earnedStars = 3;
     else if (finalScore >= 60) earnedStars = 2;
 
-    const prevStars = saveData.stageStars[currentStageObj.id] || 0;
+    const currentCountKey = `${currentStageObj.id}_${totalQuestions}`;
+    const prevStars = saveData.stageStars[currentCountKey] || 0;
     if (earnedStars > prevStars) {
-      saveData.stageStars[currentStageObj.id] = earnedStars;
+      saveData.stageStars[currentCountKey] = earnedStars;
     }
 
-    // ステージ固有おもちゃの解放（初クリア時）
-    const stageToy = currentStageObj.toy;
+    // ステージ＆問題数固有おもちゃの解放（初クリア時）
+    const stageToy = currentStageObj.toys[totalQuestions] || currentStageObj.toys[5];
     const isFirstToyGet = !saveData.unlockedToys.includes(stageToy.id);
     if (isFirstToyGet) {
       saveData.unlockedToys.push(stageToy.id);
@@ -1450,7 +1658,7 @@
 
     resultTitleEl.textContent = finalScore === 100 ? '100てん まんてん！' : `${finalScore}てん！`;
 
-    const stLabel = `${COURSE_NAMES[currentStageObj.course]} ステージ${currentStageObj.stageNum}`;
+    const stLabel = `${COURSE_NAMES[currentStageObj.course]} ステージ${currentStageObj.stageNum}（${totalQuestions}もん）`;
     if (finalScore === 100) {
       resultSubtitleEl.textContent = `【${stLabel}】ほし3つ パーフェクト！ すごいね！`;
       renderStampSVG('hanamaru');
@@ -1465,8 +1673,8 @@
     // ステージクリア報酬バナー表示（毎回表示し、初回は強調）
     rewardBannerEl.classList.remove('is-hidden');
     rewardBannerBadgeEl.textContent = isFirstToyGet
-      ? 'ステージクリア ごほうび ゲット！'
-      : 'この ステージの ごほうび つみき';
+      ? `【${totalQuestions}もんクリア】ごほうび ゲット！`
+      : `【${totalQuestions}もん】ごほうび つみき`;
     rewardNameEl.textContent = `「${stageToy.name}」の つみき`;
     rewardSubtextEl.textContent = isFirstToyGet
       ? 'ずかんと つみきひろばに ついか されたよ！'
@@ -2025,6 +2233,19 @@
       countTabs.forEach((t) => t.classList.remove('is-selected'));
       tab.classList.add('is-selected');
       totalQuestions = Number(tab.dataset.count) || 5;
+      renderStageList();
+    });
+  });
+
+  // 図鑑フィルタータブ
+  const zukanFilterBtns = Array.from(document.querySelectorAll('.zukan-filter-btn'));
+  zukanFilterBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      window.se.playButton();
+      zukanFilterBtns.forEach((b) => b.classList.remove('is-selected'));
+      btn.classList.add('is-selected');
+      currentZukanFilter = btn.dataset.filter || 'all';
+      updateZukanUI();
     });
   });
 

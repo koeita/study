@@ -807,6 +807,57 @@ body {
   color: #555555;
 }
 
+.zukan-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.zukan-filter-btn {
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  font-weight: 800;
+  font-size: 0.8rem;
+  color: #2c3e50;
+  background-color: #ffffff;
+  border: 2px solid #2c3e50;
+  border-radius: 8px;
+  padding: 3px 10px;
+  cursor: pointer;
+  box-shadow: 0 2px 0 #2c3e50;
+  touch-action: manipulation;
+}
+
+.zukan-filter-btn.is-selected {
+  background-color: #ffc6ff;
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 #2c3e50;
+}
+
+.stage-counts-stars-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  flex-wrap: wrap;
+}
+
+.count-star-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background-color: #f9f6f0;
+  border: 1.5px solid #2c3e50;
+  border-radius: 6px;
+  padding: 1px 5px;
+  color: #2c3e50;
+}
+
+.count-star-badge.is-current {
+  background-color: #fff9db;
+  border-width: 2px;
+}
+
 .zukan-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

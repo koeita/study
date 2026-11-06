@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=6">
+  <link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
   <div id="app-wrapper">
@@ -78,17 +78,17 @@
             <span class="title-sub">たのしい さんすう つみき</span>
             <div class="star-counter-pill" id="star-counter-pill">
               <span class="star-icon-inline" id="title-star-svg"></span>
-              <span>あつめた ほし：<strong id="total-stars-count">0</strong> / 60</span>
+              <span>あつめた ほし：<strong id="total-stars-count">0</strong> / 180</span>
             </div>
           </div>
           <h1 class="title-main">すうじ つみき</h1>
-          <p class="title-desc">ステージを クリアして ごほうびを あつめよう！</p>
+          <p class="title-desc">もんだいのかずごとに ほしと とくべつなつみきを あつめよう！</p>
         </div>
 
         <!-- やりこみナビゲーションバー（図鑑・きせかえ・ひろば） -->
         <div class="extra-nav-row">
           <button id="btn-open-zukan" class="extra-nav-btn zukan-btn" type="button">
-            ずかん（<span id="zukan-badge-count">0</span>/20）
+            ずかん（<span id="zukan-badge-count">0</span>/60）
           </button>
           <button id="btn-open-skin" class="extra-nav-btn skin-btn" type="button">
             きせかえ（<span id="skin-badge-count">1</span>/5）
@@ -132,16 +132,22 @@
       </div>
     </section>
 
-    <!-- やりこみ要素A：つみき ずかん（全20種コレクション）モーダル -->
+    <!-- やりこみ要素A：つみき ずかん（全60種コレクション）モーダル -->
     <section id="zukan-overlay" class="overlay-screen is-hidden" aria-hidden="true">
       <div class="overlay-card zukan-card">
         <div class="zukan-header">
           <h2 class="zukan-title">つみき ずかん</h2>
-          <p class="zukan-subtitle">ステージを クリアして あつめた とくべつな つみき（<span id="zukan-total-collected">0</span> / 20こ）</p>
+          <p class="zukan-subtitle">あつめた つみき：<span id="zukan-total-collected">0</span> / 60こ</p>
+          <div class="zukan-tabs" id="zukan-filter-tabs">
+            <button class="zukan-filter-btn is-selected" type="button" data-filter="all">ぜんぶ</button>
+            <button class="zukan-filter-btn" type="button" data-filter="3">3もん</button>
+            <button class="zukan-filter-btn" type="button" data-filter="5">5もん</button>
+            <button class="zukan-filter-btn" type="button" data-filter="10">10もん</button>
+          </div>
         </div>
 
         <div class="zukan-grid" id="zukan-grid">
-          <!-- 20種類の積み木カードがJSで生成される -->
+          <!-- 60種類の積み木カードがJSで生成される -->
         </div>
 
         <div class="zukan-actions">
@@ -225,7 +231,7 @@
 
   <!-- 2D物理エンジン Matter.js (CDN) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
-  <script src="se.js?v=6"></script>
-  <script src="main.js?v=6"></script>
+  <script src="se.js?v=7"></script>
+  <script src="main.js?v=7"></script>
 </body>
 </html>
